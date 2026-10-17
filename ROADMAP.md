@@ -281,13 +281,19 @@ fase ini memakai jalur gratis lebih dulu, lalu bermigrasi ke VPS saat siap.
 
 | Opsi | Biaya | Cocok untuk | Batasan |
 | --- | --- | --- | --- |
-| **VM Linux lokal** (UTM/QEMU/Lima di macOS) | Gratis | Membuktikan firewall, DNS binding, TLS, kuota, capability, preflight | Bukan host publik; tidak membuktikan perilaku jaringan internet nyata |
-| Oracle Cloud Free Tier (ARM) | Gratis | Uji egress nyata dan allowlist CDN | Kapasitas sering penuh; kebijakan dapat berubah; IP datacenter mudah diblokir platform |
+| **Oracle Cloud Always Free (ARM)** | Gratis | Host publik pertama: 2 OCPU/12 GB, 200 GB disk, **10 TB egress/bulan** | Kapasitas ARM sering penuh; butuh kartu untuk verifikasi; instance yang idle 7 hari bisa direklamasi; IP datacenter (TikTok butuh impersonate, YouTube tetap 0%) |
+| **VM Linux lokal** (UTM/QEMU/Lima di macOS) | Gratis | Latihan firewall, DNS binding, TLS, kuota, capability, preflight tanpa risiko | Bukan host publik; tidak membuktikan perilaku jaringan internet nyata |
 | Hetzner/Contabo VPS kecil | ±$5–8/bulan | Staging publik murah | Bukan gratis, tetapi paling dekat dengan produksi |
 
-**Rekomendasi:** mulai dengan VM lokal untuk menutup lima dari enam bloker (semua kecuali
-allowlist CDN nyata), lalu pindah ke VPS termurah saat pipeline butuh internet nyata. Ini
-menghindari membayar server sebelum ada yang bisa dijalankan di atasnya.
+**Rekomendasi (diperbarui 18 Oktober 2026):** jalur ekstraksi sudah dibuktikan dari IP
+datacenter lewat GitHub Actions (4.4), jadi yang tersisa adalah infrastruktur. Mulai dari
+**Oracle Always Free**: 10 TB egress/bulan menutup ~1.000 unduhan/hari (468 GB) dengan biaya nol,
+dan 2 OCPU/12 GB cukup untuk FFmpeg + 2 unduhan bersamaan. Batas ARM sering penuh di jam sibuk;
+bila gagal provision, ulangi di availability domain lain atau tunggu. Jangan andalkan free tier
+sebagai host produksi jangka panjang: pindah ke VPS berbayar begitu trafik membenarkan.
+
+VM lokal tetap berguna sebagai latihan kering untuk lima dari enam bloker tanpa menyentuh host
+publik, tetapi tidak boleh dipakai sebagai bukti success rate platform (IP rumah).
 
 Peringatan: banyak free tier melarang beban kerja pengunduh media berintensitas bandwidth
 tinggi. Baca ToS penyedia sebelum mengandalkannya; jangan jadikan free tier sebagai host produksi.
@@ -296,7 +302,7 @@ tinggi. Baca ToS penyedia sebelum mengandalkannya; jangan jadikan free tier seba
 
 | Pekerjaan | Detail | Bukti |
 | --- | --- | --- |
-| Provision host | VM Debian 13 (agar cocok `base_image.lock`), 4 vCPU / 8 GB / 60 GB; IPv4 dan IPv6 | `uname -a`, spesifikasi |
+| Provision host | VM Debian 13 (agar cocok `base_image.lock`), 2 vCPU / 12 GB / 60 GB di Oracle Always Free (atau 4 vCPU / 8 GB bila berbayar); IPv4 dan IPv6 | `uname -a`, spesifikasi |
 | DNS & domain | A + AAAA ke host staging, TTL rendah, tanpa wildcard | `dig` A/AAAA |
 | TLS | Jalur VPS: Let's Encrypt via ACME untuk domain staging. Jalur VM lokal: sertifikat self-signed **hanya** untuk menguji konfigurasi — bukan bukti TLS produksi | `openssl s_client`, masa berlaku, dan catatan jalur mana yang dipakai |
 | Hardening dasar | SSH key-only, non-root, nftables default-deny, unattended-upgrades | `ss -tulpn`, ruleset |
