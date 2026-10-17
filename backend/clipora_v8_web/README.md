@@ -1,44 +1,31 @@
-# Clipora web staging
+# Clipora v8 — frontend produk
 
-Target MVP yang dikonfirmasi: YouTube, TikTok, Instagram, Pinterest. Package ini menjadi kandidat permukaan web produk; `main_v8` lokal dan v7 tetap utuh. Tidak mengimpor router eksperimen, scheduler, Docker runner, atau yt-dlp. Public download selalu 503 dan health menyatakan belum siap launch.
+Frontend memakai HTML/CSS/JavaScript dan FastAPI yang sudah ada. Identitas Clipora ungu/terang dipertahankan; navigasi menyediakan Video Downloader, Photo Downloader, Audio Downloader dan History. Video/foto memakai pengenalan URL yang ada. Audio dan History belum tersedia dan ditampilkan dengan jujur. Tidak ada hasil unduhan palsu atau unduhan platform publik yang diaktifkan.
 
-Desain dan CSS berasal dari UI Clipora v8 yang sudah dipulihkan. Asset JS/CSS kini file terpisah agar CSP tidak membutuhkan unsafe-inline. UI menyediakan pengenalan link video/gambar pada empat platform. Fitur preview/save file perangkat dihapus sesuai permintaan pemilik. Pengenalan URL bukan pemeriksaan ketersediaan video atau bukti dukungan extractor; tidak ada DNS/HTTP ke platform. URL HTTPS dibatasi hostname input yang eksplisit; IP literal, userinfo, port eksplisit, host menyerupai domain resmi, backslash, dan karakter kontrol ditolak. Domain CDN/redirect belum diotorisasi oleh daftar ini.
+Lihat [UI_RESTRUCTURE.md](UI_RESTRUCTURE.md) untuk audit, branch/checkpoint, file yang berubah, pengujian responsif dan keterbatasan.
 
-## Menjalankan preview browser lokal
+## Preview lokal
 
 Dari backend:
 
-```
+```sh
 .venv/bin/python -B clipora_v8_web/run_local.py --port 8090
 ```
 
-Buka http://127.0.0.1:8090. Launcher selalu loopback, tanpa trust forwarded headers, access log request dinonaktifkan, concurrency 32 dan keepalive 5 detik. State limiter default berada di `clipora_v8_web_runtime`; gunakan `--state /absolute/path` untuk direktori lain. Launcher tidak memulai Docker atau worker video. Server ini untuk staging lokal, bukan perintah deployment publik.
+Produk tersedia pada http://127.0.0.1:8090. Untuk utilitas developer offline gunakan --offline-workflow dan --state /absolute/private/state; buka /dev secara langsung. Halaman utama tetap bersih dari semua fixture. /dev hanya tersedia pada mode offline eksplisit + HTTP loopback, tidak pada default atau HTTPS. Halaman developer memakai API job/ownership yang sudah ada.
 
-## Batas HTTP
+Kode preview file perangkat untuk calon Tools disimpan pada tools_archive/device-preview dan tidak disajikan HTTP. Tidak ada input file pada halaman produk.
 
-- Host harus sesuai origin tunggal yang dikonfigurasi. POST harus memiliki Origin yang persis sama; tidak ada CORS permisif.
-- POST maksimum 4096 byte termasuk body streaming, deadline 5 detik, content encoding ditolak.
-- CSP hanya script/style/connect origin sendiri, media dan gambar juga hanya origin sendiri. Tidak ada inline script/style, embed/frame, kamera, mikrofon, geolokasi, atau referrer keluar.
-- GET `/dev`, `/docs`, `/openapi.json`, route demo/job offline tidak ada pada app ini.
-- Admission POST: 20 per klien per 60 detik dan 120 global, fixed window. State SQLite dan transaksi BEGIN IMMEDIATE dipakai bersama antarproses pada host yang sama. Client berasal dari ASGI peer; forwarded headers diabaikan oleh launcher. IP di-HMAC dengan secret random per database, tidak disimpan plaintext. URL/nama file/isi media tidak disimpan dalam limiter. Baris window lama dibersihkan saat admission berikutnya. SQLite dibatasi 256 halaman x 4096 byte; batas ini bukan kuota host untuk seluruh produk. Busy/disk error gagal tertutup 503; kuota habis 429 dengan Retry-After.
+## Batas keamanan
 
-Fixed window bisa menerima burst di sekitar pergantian menit. Limiter ini belum menggantikan perlindungan DDoS/ingress, admission job, ownership job, atau kuota download. Di belakang reverse proxy, peer akan terlihat sebagai proxy sampai ada desain trusted proxy yang ditinjau; jangan mengaktifkan trust semua forwarded headers.
+Host/Origin persis, POST 4096 byte/deadline 5 detik, CSP origin sendiri, tanpa unsafe-inline/CDN, limiter SQLite, ownership cookie dan retensi tetap berlaku. POST /api/v8/download tetap 503; validasi hostname bukan bukti extractor. UI tidak menyimpan URL draft secara permanen atau menciptakan API audio/history.
 
-## Image dan Docker staging internal
+Launcher selalu 127.0.0.1, tanpa trust forwarded headers dan tanpa access log request. --offline-workflow memberi akses Docker hanya untuk fixture lokal yang ditentukan kode. Bukan launcher deployment produksi.
 
-Image `clipora-web:v8-staging` memakai base lokal `clipora-worker:v8-dns` yang identitasnya diverifikasi oleh build_image.py. Tambahan Uvicorn/click/h11 dipin dengan SHA-256. Build context hanya daftar file web eksplisit dan wheel terverifikasi, tanpa direktori backend penuh. Build berjalan `--network=none`, pip `--no-index --require-hashes`. Wheel berasal dari PyPI/pip cache; aplikasi dan worker tidak diberi egress untuk mengambil dependensi.
+## Docker dan verifikasi
 
-```
-.venv/bin/python -B clipora_v8_web/build_image.py /absolute/wheelhouse
-.venv/bin/python -B clipora_v8_web/run_staging_test.py /absolute/report.json
-docker compose -f clipora_v8_web/staging.compose.yaml up -d --no-build --pull never
-```
+Image web dibangun offline dari base lokal terverifikasi dan wheel dengan SHA-256 terpin, melalui build_image.py /absolute/wheelhouse. Daftar file eksplisit mengecualikan developer HTML/JS/CSS, arsip Tools, router legacy dan Docker client. staging.compose.yaml hanya network internal tanpa published port, runtime readonly/non-root/cap-drop ALL/NoNewPrivs dengan state tmpfs.
 
-Compose tersebut khusus pengujian runtime internal, **tidak menyediakan port browser host**. Pengujian port localhost yang diteruskan langsung ke network internal gagal pada Docker Desktop ini walaupun server sehat; port mapping dihapus. Gunakan launcher lokal untuk preview browser. Harness menguji HTTP lewat loopback container dengan docker exec, lalu membersihkan resource disposable miliknya.
+run_staging_test.py memeriksa entrypoint default; main(owned=True) memeriksa surface ownership. State tmpfs/limiter bukan kuota total host atau penyimpanan produksi. Dependensi/OS minimal, ingress TLS, filesystem quota, load/recovery dan sign-off masih diperlukan. Jangan menyimpulkan readiness publik dari tes fixture.
 
-Runtime container non-root, readonly, cap-drop ALL, NoNewPrivs, CPU/memory/PID dibatasi, tanpa bind mount/Docker socket. Jaringan internal; DNS upstream dikonfigurasi loopback. State limiter di tmpfs 4 MiB sehingga hilang ketika container dibuat ulang. Image staging masih mewarisi paket worker yang tidak diperlukan web; image web produksi yang minimal, inventaris OS, vulnerability scan, dan lock seluruh transitive dependencies masih menjadi pekerjaan release.
-
-Jangan menyimpulkan staging Docker dapat menerima trafik publik atau bahwa persistent rate limit lintas restart sudah siap dari tes ini. Tes membuktikan runtime Linux web, kebijakan HTTP, serta pembatasan antarproses lokal. Untuk release diperlukan ingress TLS dan penyimpanan state yang dipilih dan diuji.
-
-
-Kontrak kepemilikan job/file kandidat dijelaskan di [OWNERSHIP.md](OWNERSHIP.md). Entrypoint default dan download publik tetap nonaktif.
+Kontrak ownership: [OWNERSHIP.md](OWNERSHIP.md). Backend gambar: [IMAGES.md](IMAGES.md). Roadmap: [MVP_READINESS.md](MVP_READINESS.md).

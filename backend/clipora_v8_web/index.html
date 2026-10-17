@@ -1,14 +1,63 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#f8f9fd"><meta name="description" content="Clipora video and image saver preview. Public downloads are being prepared.">
-<title>Clipora — Save videos & images, simply.</title><link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script></head><body>
-<header class="layout"><div class="brand" aria-label="Clipora">clipora<span>.</span></div><div class="top-right"><span class="pill"><span class="small-dot" aria-hidden="true"></span>Preview · downloads coming soon</span></div></header>
-<main class="layout"><section class="hero" aria-labelledby="hero-title"><span class="eyebrow">Your simple media saver</span><h1 id="hero-title">Your videos & photos.<br><em>One simple link.</em></h1><p class="subtitle">A simpler way to keep the videos you love. YouTube, TikTok, Instagram, and Pinterest downloads are being prepared. Image posts and albums from TikTok, Instagram, and Pinterest are also planned. Check a video or image post link to get started.</p></section>
-<section class="workspace" aria-label="Video and image tools"><div class="panel">
-<form id="downloadForm"><fieldset class="media-choice"><legend>What would you like to save?</legend><label><input type="radio" name="media_kind" value="video" checked>Video</label><label><input type="radio" name="media_kind" value="images">Images / album</label></fieldset><p id="media-help" class="media-help">Video links from YouTube, TikTok, Instagram, and Pinterest.</p><div class="panel-head"><label for="url" id="url-label" class="label">Video URL</label><span class="hint">Link check only</span></div><div class="input-wrap"><input type="url" id="url" required maxlength="2048" autocomplete="off" spellcheck="false" placeholder="Paste a YouTube, TikTok, Instagram, or Pinterest link" aria-describedby="url-description media-help"></div><button id="check-link" class="action form-action" type="submit">Check link →</button><p class="panel-note" id="url-description">Public downloads are not available yet. Checking a link does not fetch or download any media.</p></form>
-<div id="result" class="state" role="status" aria-live="polite" aria-atomic="true">Paste a video link to check its platform.</div>
-<section id="sample-mode" class="sample-mode" aria-labelledby="sample-title" hidden><span class="privacy-label">LOCAL PREVIEW</span><h2 id="sample-title">Try a sample download</h2><p>See the complete download flow with a short sample video. This uses a local test environment and does not download from a public platform.</p><div class="sample-actions"><button id="sample-start" class="action secondary" type="button">Prepare sample ↓</button><button id="sample-cancel" class="action secondary" type="button" hidden>Cancel</button></div><div id="sample-status" class="state" role="status" aria-live="polite" aria-atomic="true">Ready to prepare a sample video.</div><video id="sample-video" controls preload="metadata" hidden aria-label="Sample video"></video><a id="sample-save" class="action secondary" hidden download="clipora-sample.mp4">Download sample ↓</a></section>
-<section id="image-sample-mode" class="sample-mode" aria-labelledby="image-sample-title" hidden><span class="privacy-label">LOCAL TEST ALBUM</span><h2 id="image-sample-title">Try a sample album</h2><p>Prepare three locally generated test images through the backend. This does not download a TikTok, Instagram, or Pinterest post.</p><div class="sample-actions"><button id="image-sample-start" class="action secondary" type="button">Prepare sample album</button><button id="image-sample-cancel" class="action secondary" type="button" hidden>Cancel sample album</button></div><div id="image-sample-status" class="state" role="status" aria-live="polite">Ready to prepare a sample album.</div><div id="image-sample-gallery" class="image-gallery"></div><a id="image-sample-zip" class="action secondary" download="clipora-sample-images.zip" hidden>Download sample album ZIP ↓</a></section></div><div class="supported" aria-label="Planned platforms"><span class="caption">COMING TO CLIPORA</span><span class="platform">YouTube</span><span class="platform">TikTok</span><span class="platform">Instagram</span><span class="platform">Pinterest</span></div></section>
-<section class="why" aria-label="Why Clipora"><article><div class="feature-icon" aria-hidden="true">↗</div><h2>Simple by design</h2><p>A clear path from your video or image post to a saved file, with helpful progress updates.</p></article><article><div class="feature-icon" aria-hidden="true">▣</div><h2>Video & image albums</h2><p>Choose video or image mode for your link. Save image albums individually or as a ZIP when downloads are available.</p></article><article><div class="feature-icon" aria-hidden="true">◷</div><h2>Built with care</h2><p>Public downloads will become available after security and reliability checks are complete.</p></article></section></main>
-<footer class="layout"><span>© 2026 Clipora. All rights reserved.</span><span>Save and share videos you own or have permission to use.</span></footer>
-</body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8f9fd">
+  <meta name="description" content="Clipora brings video links, photo posts, and audio into one simple downloader experience. Public downloads are currently unavailable.">
+  <title>Video Downloader · Clipora</title>
+  <link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header layout">
+    <a class="brand" href="#video" aria-label="Clipora home">clipora<span>.</span></a>
+    <nav class="navigation" aria-label="Downloader navigation">
+      <a href="#video" data-view="video" aria-current="page" aria-label="Video Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10 9 5 3-5 3Z"/></svg><span class="nav-full">Video Downloader</span><span class="nav-short" aria-hidden="true">Video</span></a>
+      <a href="#photo" data-view="photo" aria-label="Photo Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg><span class="nav-full">Photo Downloader</span><span class="nav-short" aria-hidden="true">Photos</span></a>
+      <a href="#audio" data-view="audio" aria-label="Audio Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18V5l10-2v13M10 9l10-2"/><ellipse cx="6.5" cy="18" rx="3.5" ry="3"/><ellipse cx="16.5" cy="16" rx="3.5" ry="3"/></svg><span class="nav-full">Audio Downloader</span><span class="nav-short" aria-hidden="true">Audio</span></a>
+      <a href="#history" data-view="history" aria-label="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2"/></svg><span>History</span></a>
+    </nav>
+  </header>
+  <main id="main" class="layout" tabindex="-1">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow" id="feature-label">Video Downloader</p>
+      <h1 id="page-title" tabindex="-1"><span id="hero-line">Your videos.</span><br><em id="hero-accent">One simple link.</em></h1>
+      <p class="subtitle" id="hero-description">A simpler way to save the videos you love. Start with a link from your favorite platform.</p>
+    </section>
+    <section id="link-view" class="workspace" aria-label="Link checker">
+      <div class="download-panel">
+        <div class="panel-heading"><span class="field-caption" id="form-caption">Start with your video link</span><span class="availability"><span aria-hidden="true"></span>Downloads unavailable</span></div>
+        <form id="downloadForm">
+          <label for="url" id="url-label">Video URL</label>
+          <div class="input-row"><input type="url" id="url" required maxlength="2048" autocomplete="off" spellcheck="false" placeholder="Paste a video link here" aria-describedby="platform-help download-notice"><button class="button primary" id="check-link" type="submit">Check link <span aria-hidden="true">→</span></button></div>
+          <p id="platform-help" class="input-help">YouTube, TikTok, Instagram, and Pinterest links.</p>
+        </form>
+        <div id="result" class="result" role="status" aria-live="polite" aria-atomic="true" hidden><strong id="result-title"></strong><p id="result-description"></p></div>
+        <p id="download-notice" class="notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>Public downloads are currently unavailable. You can check whether your link uses a supported platform.</span></p>
+      </div>
+      <div class="platforms" aria-label="Recognized platforms"><span class="platform-caption">Link recognition</span><ul id="platform-list"><li>YouTube</li><li>TikTok</li><li>Instagram</li><li>Pinterest</li></ul></div>
+    </section>
+    <section id="audio-view" class="workspace" aria-label="Audio Downloader" hidden>
+      <div class="download-panel">
+        <div class="panel-heading"><span class="field-caption">Start with a video link</span><span class="availability">Not available yet</span></div>
+        <label for="audio-url">Video URL</label>
+        <div class="input-row"><input id="audio-url" type="url" disabled placeholder="Audio downloads are not available yet" aria-describedby="audio-notice"><button class="button primary" type="button" disabled>Extract audio</button></div>
+        <p class="input-help">Audio formats and quality options will appear when supported.</p>
+        <p class="notice" id="audio-notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>Audio extraction isn't available yet. You can still check a video link in Video Downloader.</span></p>
+        <a class="text-link" href="#video">Go to Video Downloader <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+    <section id="history-view" class="workspace" aria-label="Download history" hidden>
+      <div class="download-panel empty-state">
+        <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2"/></svg></span>
+        <h2>History isn't available yet</h2>
+        <p>Completed downloads will appear here when history is supported. Download links are temporary and may expire.</p>
+        <a href="#video" class="button secondary">Back to Video Downloader <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+    <noscript><p class="noscript-note">Enable JavaScript to switch downloaders and check links. Public downloads are currently unavailable.</p></noscript>
+    <div class="product-note"><span class="note-rule" aria-hidden="true"></span><p>A simple place for your videos, photos, and audio.</p><span class="note-rule" aria-hidden="true"></span></div>
+  </main>
+  <footer class="site-footer layout"><span>© 2026 Clipora.</span><p>Save media you own or have permission to use.</p></footer>
+</body>
+</html>

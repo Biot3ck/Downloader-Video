@@ -116,6 +116,17 @@ def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample
     def script():return FileResponse(BASE / 'assets/app.js', media_type='text/javascript')
     @app.get('/assets/style.css')
     def style():return FileResponse(BASE / 'assets/style.css', media_type='text/css')
+    # Developer utilities are only served by the explicit offline loopback
+    # preview. Default/HTTPS/container product entrypoints keep returning 404.
+    parsed_origin = validate_origin(origin)
+    if (offline_sample_enabled and parsed_origin.scheme == 'http'
+            and parsed_origin.hostname in ('127.0.0.1', 'localhost', '::1')):
+        @app.get('/dev')
+        def developer_page():return FileResponse(BASE / 'dev.html', media_type='text/html')
+        @app.get('/assets/dev.js')
+        def developer_script():return FileResponse(BASE / 'assets/dev.js', media_type='text/javascript')
+        @app.get('/assets/dev.css')
+        def developer_style():return FileResponse(BASE / 'assets/dev.css', media_type='text/css')
     @app.post('/api/v8/validate')
     async def validate_url(request: Request):
         if request.headers.get('content-type', '').split(';')[0].strip().lower() != 'application/json':

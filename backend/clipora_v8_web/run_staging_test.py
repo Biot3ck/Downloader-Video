@@ -98,6 +98,11 @@ print(job['job_id'])
             assert http(path)[0]==404 and http(path+'/file')[0]==404
             status,body,headers=http(path+'/file',headers={'Cookie':session_cookie,'Range':'bytes=4-7'})
             assert status==206 and body=='ftyp'
+        status,body,_=http('/')
+        assert status==200 and 'Photo Downloader' in body and 'Audio Downloader' in body and 'History' in body
+        assert 'sample-start' not in body and 'type="file"' not in body
+        source_probe="from pathlib import Path;r=Path('/srv/clipora_v8_web');assert all(not (r/p).exists() for p in ('dev.html','assets/dev.js','assets/dev.css','tools_archive'))"
+        docker(['exec',name,'python','-B','-c',source_probe])
         assert http('/api/v8/download',b'{}',{'Origin':origin})[0] == 503
         for path in ('/dev','/docs','/openapi.json','/api/v8/real-offline/jobs'):
             assert http(path)[0] == 404

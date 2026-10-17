@@ -57,3 +57,7 @@ Kandidat clipora_v8_image_backend kini memakai worker Docker network none untuk 
 ## Perubahan UI atas permintaan pemilik
 
 Fitur On your device / No upload, pemilih file video/gambar, preview perangkat dan ZIP browser dihapus. Pilihan Video/Images, pengenalan link, sampel backend, ownership dan galeri/ZIP hasil backend tetap dipertahankan. Tidak ada aktivasi egress atau perubahan v7.
+
+## Restrukturisasi frontend produk
+
+Empat menu Video/Photo/Audio/History tersedia. Hanya pengenalan link video/foto yang tersambung pada produk; Audio/History unavailable karena belum ada API yang sesuai. Semua demo/sampel dipindahkan ke /dev loopback-only dan kode perangkat disimpan sebagai arsip Tools yang tidak disajikan. Lihat UI_RESTRUCTURE.md untuk checkpoint Git, pengujian 16 kombinasi viewport/view, dan batas integrasi. Public gate dan enam blocker tidak berubah.
