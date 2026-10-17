@@ -59,6 +59,10 @@ class FrontendNavigationTests(unittest.TestCase):
             self.assertEqual(client.get(path).status_code,404)
         for kind in ('video','images','audio'):
             self.assertEqual(client.post('/api/v8/download',headers={'Origin':ORIGIN},json={'media_kind':kind,'url':'https://pin.it/a'}).status_code,503)
+        # Client assertions about ads/quality must never unlock the public gate.
+        for output in ('video','hd','mp3'):
+            self.assertEqual(client.post('/api/v8/download',headers={'Origin':ORIGIN},
+                json={'url':'https://youtu.be/abc','format':output,'reward_completed':True}).status_code,503)
 
 
 if __name__=='__main__':unittest.main()

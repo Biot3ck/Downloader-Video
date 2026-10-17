@@ -20,3 +20,21 @@ Rewarded ad dan pilihan format tidak menjadi pengganti gate keamanan. Integrasi 
 ## Verifikasi perubahan UI
 
 63 tes Python web dan 7 unit test JavaScript lulus. Tes JavaScript memastikan pilihan HD/MP3 hanya memakai kontrak pengenalan URL yang sudah ada dan tidak membuat request download/iklan. Image web dibangun offline dan kedua entrypoint Docker diuji ulang. Browser aktual memeriksa pilihan HD/MP3, tombol panah keyboard, pilihan tersembunyi di Photo, serta lebar 1280/768/390/320 tanpa overflow horizontal. Viewport pengujian di-reset; tab pengguna tidak diubah.
+
+## Kandidat backend offline
+
+video_formats.py menambahkan perencana murni tanpa I/O: maksimal 256 format, durasi 30 menit, estimasi/file akhir maksimal 64 MiB. MVP kandidat hanya menerima H264/AAC MP4 dengan status non-DRM eksplisit; codec lain belum didukung. Video standar memilih format asli sampai sisi pendek 480 px, HD 720–1080 px dengan sisi panjang maksimal 1920 px. Video-only memerlukan audio AAC kompatibel; format progressive yang mempunyai audio dapat langsung dipilih. Jika tidak tersedia tidak membuat fallback/upscale. Estimasi ukuran yang tidak diketahui tetap None, bukan angka palsu, dan belum menggantikan batas byte saat download.
+
+verify_output memeriksa JSON ffprobe dari runner tepercaya: codec/container, audio/video stream, dimensi sesuai pilihan, durasi dan ukuran. MP3 harus benar-benar berisi satu stream MP3, bukan MP4 yang diganti nama. Pemeriksaan metadata ini tidak menggantikan decode penuh, pemeriksaan inode/path, fencing/ownership atau hard limit worker. Plan tidak berisi URL, header, cookie atau secret dan tidak memberikan hak HD/iklan.
+
+Modul kandidat tidak diimpor aplikasi/worker aktif, tidak disajikan HTTP dan tidak dimasukkan build_image.py. Belum ada submit, publication/delivery/cleanup MP3 atau integrasi metadata publik, merge stream terpisah, rewarded ad dan quota produksi. Batas encoding/format ini perlu diuji dengan extractor sesungguhnya di staging sebelum dihubungkan ke job. Jangan menyimpulkan readiness publik dari fixture.
+
+Pengujian aktual menggunakan FFmpeg/ffprobe di worker lokal terpin, network=none, readonly, non-root, cap-drop ALL, no-new-privileges, 1 CPU, 384 MiB, 64 PID dan tmpfs 64 MiB. Tiga sumber sintetis dibuat langsung pada 854×480, 1280×720, 1080×1920. Output video memakai stream copy, MP3 memakai konversi audio, semua hasil didecode penuh. Verifikasi menolak file 480p untuk plan HD dan MP4 untuk plan MP3. Tidak mengekspor fixture ke UI/download pengguna; worker sementara dibuang setelah pengujian.
+
+Jalankan dari backend:
+
+```sh
+.venv/bin/python -B clipora_v8_web/run_formats_offline.py --report /absolute/path/report.json
+```
+
+Setelah penambahan kandidat: 71 tes Python web, 17 backend gambar, 6 workflow lokal dan 7 JavaScript lulus (101 total), ditambah pengujian FFmpeg offline aktual. Gate publik tetap 503, termasuk ketika klien mengirim reward_completed=true dan meminta hd/mp3.
