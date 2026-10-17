@@ -15,16 +15,25 @@ function setup(){
       emit(name){return handlers[name]?.({preventDefault(){}});}};
   }
   const get=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id);};
+  get('format-video').value='video';get('format-hd').value='hd';get('format-mp3').value='mp3';
   const location={hash:'#video'};
-  const context=vm.createContext({document:{getElementById:get,querySelector:()=>get('skip'),querySelectorAll:()=>[],createElement:element},
+  const clipboard={readText:async()=>''};
+  const context=vm.createContext({document:{getElementById:get,querySelector:selector=>selector.includes('checked')?get('format-video'):get('skip'),
+      querySelectorAll:()=>[],createElement:element},
+    navigator:{clipboard},
     window:{addEventListener:(name,fn)=>listeners.set(name,fn)},location,AbortController,setTimeout,clearTimeout,
     fetch:(url,options)=>new Promise((resolve,reject)=>requests.push({url,options,resolve,reject}))});
   vm.runInContext(fs.readFileSync(__dirname+'/assets/app.js','utf8'),context);
-  return {get,requests,submit:()=>get('downloadForm').emit('submit'),
+  return {get,requests,clipboard,submit:()=>get('downloadForm').emit('submit'),
     navigate(key){location.hash='#'+key;listeners.get('hashchange')();}};
 }
 const recognized={media_kind:'video',platform:'youtube',public_downloads_enabled:false,network_access_performed:false};
 const respond=(request,data=recognized)=>request.resolve({ok:true,status:200,json:async()=>data});
+const previewPayload={sample:true,platform:'youtube',media_kind:'video',title:'Sample clip · Youtube',
+  caption:'Line one.\n\nLine two with #tags.',duration_seconds:3,width:640,height:360,
+  preview_url:'/api/v8/demo/preview/token',poster_url:'/api/v8/demo/preview/poster',
+  expires_in:300,network_access_performed:false};
+const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
 
 test('editing a checked URL clears its old recognition',async()=>{
   const ui=setup();ui.get('url').value='https://youtu.be/abc';
@@ -95,20 +104,113 @@ test('format options appear only after a recognized link and never submit a down
   ui.navigate('video');assert.equal(ui.get('video-formats').hidden,true);
 });
 test('demo downloads only call the bundled sample endpoint',async()=>{
-  const ui=setup(),done=ui.submit();
+  const ui=setup();ui.get('url').value='https://youtu.be/abc';
+  const done=ui.submit();
   respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
   assert.equal(ui.get('video-formats').hidden,false);
   assert.equal(ui.get('download-actions').hidden,false);
   assert.ok(ui.get('download-notice-text').textContent.includes('bundled sample'));
   assert.ok(ui.get('format-note').textContent.includes('Bundled sample'));
+  assert.equal(ui.requests[1].url,'/api/v8/demo/preview');
+  respond(ui.requests[1],previewPayload);await tick();
   const ready=ui.get('download-file').emit('click');
-  assert.equal(ui.requests[1].url,'/api/v8/demo/download');
-  assert.deepEqual(JSON.parse(ui.requests[1].options.body),{url:'',media_kind:'video',format:'video'});
-  ui.requests[1].resolve({ok:true,status:200,json:async()=>({sample:true,format:'video',platform:'youtube',
+  assert.equal(ui.requests[2].url,'/api/v8/demo/download');
+  assert.deepEqual(JSON.parse(ui.requests[2].options.body),{url:'https://youtu.be/abc',media_kind:'video',format:'video'});
+  ui.requests[2].resolve({ok:true,status:200,json:async()=>({sample:true,format:'video',platform:'youtube',
     filename:'clipora-sample-youtube-video.mp4',url:'/api/v8/demo/file/token',network_access_performed:false})});
   await ready;
   assert.ok(ui.get('download-status').textContent.includes('clipora-sample-youtube-video.mp4'));
   assert.equal(ui.get('download-file').disabled,false);
+});
+test('a recognized demo link reveals a preview with the full caption before downloads',async()=>{
+  const ui=setup();ui.get('url').value='https://youtu.be/abc';
+  const done=ui.submit();
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  assert.equal(ui.get('preview-card').hidden,false);
+  assert.equal(ui.get('preview-placeholder').textContent,'Loading preview…');
+  assert.equal(ui.requests[1].url,'/api/v8/demo/preview');
+  assert.deepEqual(JSON.parse(ui.requests[1].options.body),{url:'https://youtu.be/abc',media_kind:'video'});
+  respond(ui.requests[1],previewPayload);await tick();
+  assert.equal(ui.get('preview-video').attrs.src,'/api/v8/demo/preview/token');
+  assert.equal(ui.get('preview-video').attrs.poster,'/api/v8/demo/preview/poster');
+  assert.equal(ui.get('preview-video').hidden,false);
+  assert.equal(ui.get('preview-placeholder').hidden,true);
+  assert.equal(ui.get('preview-caption').textContent,previewPayload.caption);
+  assert.equal(ui.get('preview-title').textContent,'Sample clip · Youtube');
+  assert.equal(ui.get('preview-platform').textContent,'YouTube');
+  assert.equal(ui.get('preview-duration').textContent,'3s · 640×360');
+  // Preview markup sits above the format picker and the download button.
+  assert.equal(ui.get('video-formats').hidden,false);
+  assert.equal(ui.get('download-actions').hidden,false);
+});
+test('photo previews use the bundled image and drop the poster',async()=>{
+  const ui=setup();ui.navigate('photo');ui.get('url').value='https://pin.it/abc';
+  const done=ui.submit();
+  respond(ui.requests[0],{...recognized,media_kind:'images',platform:'pinterest',demo_downloads_enabled:true});await done;
+  respond(ui.requests[1],{...previewPayload,media_kind:'images',platform:'pinterest',width:1280,height:720,
+    duration_seconds:null,poster_url:null});await tick();
+  assert.equal(ui.get('preview-image').attrs.src,'/api/v8/demo/preview/token');
+  assert.equal(ui.get('preview-image').hidden,false);
+  assert.equal(ui.get('preview-video').hidden,true);
+  assert.equal(ui.get('preview-video').attrs.poster,undefined);
+  assert.equal(ui.get('preview-duration').textContent,'1280×720');
+  assert.equal(ui.get('format-note').textContent.startsWith('Bundled sample'),true);
+});
+test('preview failures and non-sample payloads never render media',async()=>{
+  for(const payload of [{...previewPayload,preview_url:'https://evil.example/x'},
+                        {...previewPayload,network_access_performed:true},
+                        {...previewPayload,caption:null},
+                        {...previewPayload,sample:false}]){
+    const ui=setup();ui.get('url').value='https://youtu.be/abc';
+    const done=ui.submit();
+    respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+    respond(ui.requests[1],payload);await tick();
+    assert.equal(ui.get('preview-video').hidden,true);
+    assert.equal(ui.get('preview-placeholder').textContent,'Preview unavailable right now.');
+  }
+  const ui=setup();ui.get('url').value='https://youtu.be/abc';
+  const done=ui.submit();
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  ui.requests[1].resolve({ok:false,status:503,json:async()=>{throw Error('private');}});await tick();
+  assert.equal(ui.get('preview-video').hidden,true);
+  assert.equal(ui.get('preview-placeholder').textContent,'Preview unavailable right now.');
+});
+test('editing or switching views removes the old preview',async()=>{
+  const ui=setup();ui.get('url').value='https://youtu.be/abc';
+  const done=ui.submit();
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  respond(ui.requests[1],previewPayload);await tick();
+  assert.equal(ui.get('preview-card').hidden,false);
+  ui.get('url').emit('input');
+  assert.equal(ui.get('preview-card').hidden,true);
+  assert.equal(ui.get('preview-video').attrs.src,undefined);
+});
+test('paste fills the URL field and checks the link automatically',async()=>{
+  const ui=setup();
+  ui.clipboard.readText=async()=>'  https://www.tiktok.com/@user/video/123  ';
+  const done=ui.get('paste-link').emit('click');
+  await tick();
+  assert.equal(ui.get('url').value,'https://www.tiktok.com/@user/video/123');
+  assert.equal(ui.requests[0].url,'/api/v8/validate');
+  assert.deepEqual(JSON.parse(ui.requests[0].options.body),{url:'https://www.tiktok.com/@user/video/123',media_kind:'video'});
+  respond(ui.requests[0]);await done;
+  assert.equal(ui.get('result-title').textContent,'YouTube link recognized');
+  assert.equal(ui.get('paste-link').disabled,false);
+});
+test('paste failures and empty clipboards explain what to do instead',async()=>{
+  const ui=setup();
+  ui.clipboard.readText=async()=>{throw Error('denied');};
+  await ui.get('paste-link').emit('click');
+  assert.equal(ui.get('result-title').textContent,'Could not read the clipboard');
+  assert.equal(ui.requests.length,0);
+  assert.equal(ui.get('paste-link').disabled,false);
+  ui.clipboard.readText=async()=>'   ';
+  await ui.get('paste-link').emit('click');
+  assert.equal(ui.get('result-title').textContent,'Clipboard is empty');
+  ui.clipboard.readText=async()=>'x'.repeat(2049);
+  await ui.get('paste-link').emit('click');
+  assert.equal(ui.get('result-title').textContent,'That link is too long');
+  assert.equal(ui.requests.length,0);
 });
 test('a demo response that is not a bundled sample is rejected',async()=>{
   const ui=setup(),done=ui.submit();

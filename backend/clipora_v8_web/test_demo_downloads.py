@@ -26,15 +26,74 @@ class DemoDownloadTests(unittest.TestCase):
         return client.post('/api/v8/demo/download', headers={'Origin': origin},
                            json={'url': url, 'media_kind': kind, 'format': fmt})
 
+    def preview(self, client, kind='video', url=TIKTOK, origin=ORIGIN):
+        return client.post('/api/v8/demo/preview', headers={'Origin': origin},
+                           json={'url': url, 'media_kind': kind})
+
     def test_routes_are_absent_unless_explicitly_enabled(self):
         client = self.client(demo=False)
         self.assertEqual(self.issue(client).status_code, 404)
+        self.assertEqual(self.preview(client).status_code, 404)
         self.assertEqual(client.get('/api/v8/demo/file/anything').status_code, 404)
+        self.assertEqual(client.get('/api/v8/demo/preview/anything').status_code, 404)
 
     def test_routes_stay_absent_on_non_loopback_https_even_with_the_flag(self):
         client = self.client(origin='https://clipora.example')
         self.assertEqual(self.issue(client, origin='https://clipora.example').status_code, 404)
+        self.assertEqual(self.preview(client, origin='https://clipora.example').status_code, 404)
         self.assertEqual(client.get('/api/v8/demo/file/anything').status_code, 404)
+        self.assertEqual(client.get('/api/v8/demo/preview/anything').status_code, 404)
+
+    def test_preview_returns_the_bundled_clip_and_the_full_caption(self):
+        client = self.client()
+        response = self.preview(client)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['sample'])
+        self.assertFalse(data['network_access_performed'])
+        self.assertEqual(data['platform'], 'tiktok')
+        self.assertEqual(data['media_kind'], 'video')
+        self.assertEqual(data['title'], 'Sample clip · TikTok')
+        self.assertEqual((data['width'], data['height']), (640, 360))
+        self.assertEqual(data['duration_seconds'], 3)
+        self.assertGreater(len(data['caption']), 200)
+        self.assertIn('\n', data['caption'])
+        self.assertTrue(data['preview_url'].startswith('/api/v8/demo/preview/'))
+        self.assertTrue(data['poster_url'].startswith('/api/v8/demo/preview/'))
+        served = client.get(data['preview_url'])
+        self.assertEqual(served.status_code, 200)
+        self.assertEqual(served.headers['content-type'], 'video/mp4')
+        self.assertIn('inline', served.headers['content-disposition'])
+        self.assertGreater(len(served.content), 1024)
+        poster = client.get(data['poster_url'])
+        self.assertEqual(poster.status_code, 200)
+        self.assertEqual(poster.headers['content-type'], 'image/jpeg')
+
+    def test_photo_preview_uses_the_bundled_image_and_no_poster(self):
+        client = self.client()
+        data = self.preview(client, kind='images', url=PIN).json()
+        self.assertEqual(data['platform'], 'pinterest')
+        self.assertEqual((data['width'], data['height']), (1280, 720))
+        self.assertIsNone(data['duration_seconds'])
+        self.assertIsNone(data['poster_url'])
+        served = client.get(data['preview_url'])
+        self.assertEqual(served.status_code, 200)
+        self.assertEqual(served.headers['content-type'], 'image/jpeg')
+        self.assertIn('inline', served.headers['content-disposition'])
+
+    def test_preview_rejects_unknown_kinds_and_unrecognized_links(self):
+        client = self.client()
+        self.assertEqual(self.preview(client, kind='audio').status_code, 422)
+        for url in ('https://evil.example/a', 'javascript:alert(1)'):
+            self.assertEqual(self.preview(client, url=url).status_code, 422, url)
+
+    def test_preview_tokens_are_signed_and_expire(self):
+        client = self.client()
+        token = self.preview(client).json()['preview_url'].rsplit('/', 1)[1]
+        body, signature = token.split('.')
+        self.assertEqual(client.get('/api/v8/demo/preview/' + body + '.' + signature[:-2]).status_code, 404)
+        with patch('clipora_v8_web.demo_downloads.time.time', return_value=10 ** 12):
+            self.assertEqual(client.get('/api/v8/demo/preview/' + token).status_code, 410)
 
     def test_issued_link_serves_the_bundled_sample(self):
         client = self.client()
