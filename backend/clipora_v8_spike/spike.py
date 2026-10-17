@@ -40,6 +40,31 @@ _PATTERNS = (
 _WATERMARK_HINTS = ("download", "watermark")
 
 
+def public_ip(timeout_s: int = 6) -> str:
+    """IP publik keluar. Dicatat supaya hasil spike bisa diatribusikan ke IP tertentu."""
+    import urllib.request
+
+    for endpoint in ("https://api.ipify.org", "https://ifconfig.me/ip"):
+        try:
+            with urllib.request.urlopen(endpoint, timeout=timeout_s) as response:
+                value = response.read(64).decode("ascii", "replace").strip()
+            if value:
+                return value
+        except Exception:
+            continue
+    return "unknown"
+
+
+def egress_warning(ip: str) -> str:
+    """Ingatkan bila hasil diukur dari IP yang salah jenisnya."""
+    if ip == "unknown":
+        return "IP keluar tidak terdeteksi — hasil tidak bisa diatribusikan. Periksa jaringan."
+    if ip.startswith(("10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.2",
+                      "172.30.", "172.31.", "127.", "169.254.")):
+        return "IP keluar privat — tidak ada akses internet. Hasil tidak sah."
+    return ""
+
+
 def classify(url: str) -> str:
     """Kembalikan nama platform dari sebuah URL, atau 'unknown'."""
     match = re.match(r"^https?://([^/:?#]+)", url.strip(), re.I)
@@ -196,7 +221,9 @@ def success_rate(rows: list[dict]) -> dict[str, dict]:
 
 def verdict(summary: dict[str, dict]) -> str:
     """Terapkan kriteria berhenti dari ROADMAP bagian 4.3."""
-    tiktok = summary.get("tiktok", {}).get("rate", 0.0)
+    if "tiktok" not in summary or not summary["tiktok"]["total"]:
+        return "TIDAK ADA DATA TIKTOK: isi URL TikTok dulu — keputusan Fase 0.5 bergantung padanya."
+    tiktok = summary["tiktok"]["rate"]
     others = [b["rate"] for name, b in summary.items() if name != "tiktok" and b["total"]]
     if tiktok < 70:
         return "STOP: TikTok di bawah 70% — tinjau ulang model produk (ROADMAP 4.3)."
@@ -207,8 +234,13 @@ def verdict(summary: dict[str, dict]) -> str:
     return "LANJUT BERSYARAT: angka belum memenuhi ambang penuh, lihat tabel."
 
 
-def render_markdown(rows: list[dict], summary: dict[str, dict], source: str) -> str:
+def render_markdown(rows: list[dict], summary: dict[str, dict], source: str, egress: str = "unknown") -> str:
     lines = [f"# Hasil spike kelayakan — {source}", ""]
+    lines.append(f"**IP keluar:** `{egress}`")
+    warning = egress_warning(egress)
+    if warning:
+        lines += ["", f"> **PERINGATAN:** {warning}"]
+    lines.append("")
     lines.append("| Platform | Diuji | Berhasil | Success rate |")
     lines.append("| --- | ---: | ---: | ---: |")
     for platform, bucket in sorted(summary.items()):
@@ -278,10 +310,23 @@ def read_ok_urls(path: Path) -> set[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Spike kelayakan platform (Fase 0.5)")
-    parser.add_argument("--urls", type=Path, required=True, help="berkas daftar URL")
-    parser.add_argument("--out", type=Path, required=True, help="berkas CSV hasil")
+    parser.add_argument("--urls", type=Path, help="berkas daftar URL")
+    parser.add_argument("--out", type=Path, help="berkas CSV hasil")
     parser.add_argument("--recheck", type=Path, help="CSV sebelumnya; hanya URL yang berhasil diuji ulang")
+    parser.add_argument("--egress-only", action="store_true", help="hanya laporkan IP keluar lalu keluar")
     args = parser.parse_args(argv)
+
+    if args.egress_only:
+        ip = public_ip()
+        print(ip)
+        warning = egress_warning(ip)
+        if warning:
+            print(warning, file=sys.stderr)
+            return 2
+        return 0
+
+    if not args.urls or not args.out:
+        parser.error("--urls dan --out wajib kecuali dengan --egress-only")
 
     if not args.urls.is_file():
         print(f"berkas tidak ditemukan: {args.urls}", file=sys.stderr)
@@ -291,12 +336,18 @@ def main(argv: list[str] | None = None) -> int:
         print("tidak ada URL di berkas masukan", file=sys.stderr)
         return 1
 
+    egress = public_ip()
+    warning = egress_warning(egress)
+    print(f"IP keluar: {egress}")
+    if warning:
+        print(f"PERINGATAN: {warning}", file=sys.stderr)
+
     recheck_ok = read_ok_urls(args.recheck) if args.recheck else None
     rows = run(urls, recheck_ok)
     write_csv(rows, args.out)
 
     summary = success_rate(rows)
-    markdown = render_markdown(rows, summary, args.out.name)
+    markdown = render_markdown(rows, summary, args.out.name, egress)
     report = args.out.with_suffix(".md")
     report.write_text(markdown, encoding="utf-8")
 

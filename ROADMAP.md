@@ -165,14 +165,23 @@ minggu ke-10. Bila asumsi itu salah, delapan minggu Fase 2 terbuang.
 
 ### 4.1 Yang dikerjakan
 
-Alatnya sudah ada: `backend/clipora_v8_spike/` (lihat README di dalamnya). Jalankan di host yang
-akan dipakai produksi, bukan di laptop — yang diuji adalah perilaku platform terhadap IP tersebut.
+Alatnya sudah ada: `backend/clipora_v8_spike/` (lihat README di dalamnya). Tiga jalur tersedia:
+
+| Jalur | Perintah | IP keluar | Sah untuk keputusan? |
+| --- | --- | --- | --- |
+| VPS | `./vps_spike.sh user@host` | datacenter milik Anda | **Ya** |
+| GitHub Actions | workflow `spike` | Azure, dipakai bersama | Batas bawah |
+| Container lokal | `./run.sh` | IP rumah | Tidak — hanya cek toolchain |
+
+Satu hal yang mudah salah: **VM Linux di laptop tetap keluar lewat IP rumah.** Spike ini mengukur
+perilaku platform terhadap IP, jadi VM lokal tidak menjawab pertanyaannya. Jalur VPS yang sah;
+GitHub Actions memberi pembacaan awal gratis tanpa kartu kredit.
 
 1. VPS termurah (boleh free tier) dengan yt-dlp versi terbaru.
 2. 20 URL publik per platform: TikTok (video, slideshow, story), Instagram (reel, post, carousel),
    Pinterest (gambar, video pin), YouTube (video, Shorts).
 3. Catat untuk setiap URL: berhasil/gagal, alasan kegagalan, resolusi, ukuran, ada/tidak watermark.
-4. Uji ulang 24 jam kemudian untuk melihat apakah tautan CDN masih valid.
+4. Uji ulang 24 jam kemudian untuk melihat apakah tautan CDN masih valid (`--recheck`).
 
 ### 4.2 Yang dihasilkan
 
@@ -186,6 +195,7 @@ angka target di Fase 3.
 | TikTok ≥85% dan minimal satu platform lain ≥70% | Lanjut ke Fase 1–2 seperti rencana |
 | TikTok ≥85% tetapi platform lain <50% | Lanjut, tetapi posisi produk dipersempit ke TikTok + satu platform |
 | TikTok <70% | **Berhenti dan tinjau ulang.** Pertimbangkan Model B atau alat pribadi |
+| Tidak ada data TikTok | Laporan menolak memberi vonis; lengkapi URL TikTok lebih dulu |
 
 Menetapkan kriteria berhenti sebelum mulai adalah satu-satunya cara agar keputusan nanti tidak
 diambil berdasarkan emosi setelah berbulan-bulan kerja.

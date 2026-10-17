@@ -1,0 +1,65 @@
+# Spike kelayakan di IP datacenter, gratis.
+#
+# Runner GitHub Actions berjalan di Azure — IP datacenter, bukan IP rumah. Ini cara
+# termurah untuk mendapat pembacaan pertama sebelum menyewa VPS.
+#
+# Batasan yang harus disadari: IP Azure dipakai bersama banyak penyewa, jadi hasilnya
+# bisa LEBIH BURUK daripada VPS khusus. Anggap ini batas bawah, bukan angka final.
+#
+# Pakai: isi backend/clipora_v8_spike/urls.txt, push, lalu jalankan workflow ini
+# manual dari tab Actions.
+
+name: spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      yt_dlp_version:
+        description: 'Versi yt-dlp yang dipin'
+        required: false
+        default: '2026.08.19'
+
+permissions:
+  contents: read
+
+jobs:
+  feasibility:
+    name: Fase 0.5 feasibility spike
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install yt-dlp
+        run: python -m pip install --disable-pip-version-check "yt-dlp==${{ inputs.yt_dlp_version || '2026.08.19' }}"
+
+      - name: Pastikan daftar URL terisi
+        working-directory: backend/clipora_v8_spike
+        run: |
+          if ! grep -qE '^https?://' urls.txt; then
+            echo "urls.txt masih kosong. Isi 20 URL publik per platform lebih dulu." >&2
+            exit 1
+          fi
+
+      - name: Jalankan spike
+        working-directory: backend
+        run: |
+          python -B -m clipora_v8_spike.spike \
+            --urls clipora_v8_spike/urls.txt \
+            --out ../hasil-spike.csv
+
+      - name: Tampilkan ringkasan
+        run: cat hasil-spike.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hasil-spike
+          path: |
+            hasil-spike.csv
+            hasil-spike.md
+          if-no-files-found: warn

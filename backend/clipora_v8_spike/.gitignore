@@ -1,0 +1,5 @@
+# Hasil spike bersifat lokal dan bisa berisi URL pihak ketiga — jangan di-commit.
+hasil/
+.venv/
+*.csv
+!urls.txt

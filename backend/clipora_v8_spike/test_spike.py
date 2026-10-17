@@ -9,6 +9,7 @@ from pathlib import Path
 from clipora_v8_spike.spike import (
     analyze,
     classify,
+    egress_warning,
     read_ok_urls,
     read_urls,
     render_markdown,
@@ -102,6 +103,10 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(summary["tiktok"]["rate"], 50.0)
         self.assertEqual(summary["youtube"]["rate"], 0.0)
 
+    def test_verdict_requires_tiktok_data(self) -> None:
+        self.assertIn("TIDAK ADA DATA", verdict({}))
+        self.assertIn("TIDAK ADA DATA", verdict({"youtube": {"total": 5, "ok": 1, "rate": 20.0}}))
+
     def test_verdict_stop_below_seventy(self) -> None:
         self.assertIn("STOP", verdict({"tiktok": {"total": 10, "ok": 6, "rate": 60.0}}))
 
@@ -126,6 +131,24 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("| tiktok | 1 | 1 | 100.0% |", text)
         self.assertIn("2.0 MB", text)
         self.assertIn("Keputusan otomatis", text)
+
+    def test_markdown_records_egress_ip(self) -> None:
+        rows = [{"platform": "tiktok", "ok": True}]
+        text = render_markdown(rows, success_rate(rows), "uji.csv", "203.0.113.9")
+        self.assertIn("`203.0.113.9`", text)
+
+
+class EgressWarningTests(unittest.TestCase):
+    def test_private_ip_is_flagged(self) -> None:
+        for ip in ("10.0.0.5", "192.168.1.10", "172.17.0.2", "127.0.0.1"):
+            with self.subTest(ip=ip):
+                self.assertIn("privat", egress_warning(ip))
+
+    def test_unknown_is_flagged(self) -> None:
+        self.assertIn("tidak terdeteksi", egress_warning("unknown"))
+
+    def test_public_ip_is_silent(self) -> None:
+        self.assertEqual(egress_warning("203.0.113.9"), "")
 
 
 class CsvRoundTripTests(unittest.TestCase):
