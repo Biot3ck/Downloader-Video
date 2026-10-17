@@ -19,5 +19,8 @@ test-output/
 # OS noise
 .DS_Store
 
+# Playwright MCP artifacts (snapshots, console logs, downloaded files)
+.playwright-mcp/
+
 # Worker staging output
 backend/clipora_v8_browser_real_mp4/staging/
