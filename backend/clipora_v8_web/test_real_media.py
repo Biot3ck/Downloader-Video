@@ -278,6 +278,12 @@ class ExtractorTests(unittest.TestCase):
         self.assertEqual(caught.exception.status, 422)
         self.assertIn('Photo Downloader', str(caught.exception))
 
+    def test_youtube_bot_check_becomes_platform_guidance(self):
+        error = real_media._ydl_error(
+            Exception("ERROR: [youtube] abc: Sign in to confirm you’re not a bot."))
+        self.assertEqual(error.status, 422)
+        self.assertIn('TikTok, Instagram, or Pinterest', str(error))
+
     def test_public_url_rejects_private_and_credentialed_hosts(self):
         private = [(2, 1, 6, '', ('127.0.0.1', 443))]
         with patch('socket.getaddrinfo', return_value=private):

@@ -1,8 +1,10 @@
 # Clipora v8 — surface produk web
 
-Clipora adalah antarmuka downloader untuk video, foto, dan audio (MP3) dari YouTube, TikTok,
-Instagram dan Pinterest. **Unduhan publik sengaja dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan
-link dan pemeriksaan platform; tidak ada ekstraksi, konversi, iklan, atau penulisan file media.
+Clipora adalah antarmuka downloader untuk video, foto, dan audio (MP3) dari TikTok, Instagram
+dan Pinterest. YouTube tetap ada di kode untuk pengujian dari IP rumah, tetapi ditangguhkan dari
+janji publik: 0/20 dari IP datacenter pada tiga client (ROADMAP 4.4). **Unduhan publik sengaja
+dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan link dan pemeriksaan platform; tidak
+ada ekstraksi, konversi, iklan, atau penulisan file media.
 
 | Surface | Status |
 | --- | --- |
@@ -88,10 +90,15 @@ MP3 192 kbps; gambar dibaca per platform (TikTok `imagePost`, Instagram carousel
 `originals`/`og:image`) lalu diproxy lewat CDN bertanda tangan. Preview video/audio memakai file
 nyata yang diunduh lazy dan di-cache, jadi yang diputar sama dengan yang diunduh.
 
+Bila `curl_cffi` terpasang, yt-dlp memakai `--impersonate chrome`. Itu bukan hiasan: TikTok
+menjawab IP datacenter dengan halaman anti-bot bila fingerprint TLS terlihat seperti Python
+(0/14 → 14/14 setelah flag ini, ROADMAP 4.4). Tanpa `curl_cffi`, opsi dihilangkan agar mode demo
+dan tes tetap jalan.
+
 Batas: 100 MB per file, 10 MB per gambar, 50 MB total carousel, 20 gambar, durasi 600 detik,
 2 unduhan bersamaan, token berlaku 900 detik, cache 1 jam. Mode ini **belum** masuk image
-publik: `requirements-web.lock` belum memuat yt-dlp, dan pemisahan runtime web dari worker masih
-deviasi yang tercatat di [STATUS.md](STATUS.md).
+publik: `requirements-web.lock` belum memuat yt-dlp/curl_cffi, dan pemisahan runtime web dari
+worker masih deviasi yang tercatat di [STATUS.md](STATUS.md).
 
 ## Menjalankan tes
 

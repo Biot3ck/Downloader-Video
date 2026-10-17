@@ -163,6 +163,9 @@ Fase ini ada karena satu alasan: **risiko terbesar proyek ini adalah asumsi bahw
 platform bisa diekstrak dari IP datacenter**, dan roadmap versi sebelumnya baru mengujinya di
 minggu ke-10. Bila asumsi itu salah, delapan minggu Fase 2 terbuang.
 
+Sudah dijalankan 18 Oktober 2026 lewat GitHub Actions: TikTok, Instagram, dan Pinterest lolos;
+YouTube tidak. Angka dan keputusannya ada di [4.4](#44-hasil-eksekusi-jalur-sah-github-actions-18-oktober-2026).
+
 ### 4.1 Yang dikerjakan
 
 Alatnya sudah ada: `backend/clipora_v8_spike/` (lihat README di dalamnya). Tiga jalur tersedia:
@@ -224,6 +227,50 @@ memisahkannya agar success rate tidak turun palsu.
 
 Menetapkan kriteria berhenti sebelum mulai adalah satu-satunya cara agar keputusan nanti tidak
 diambil berdasarkan emosi setelah berbulan-bulan kerja.
+
+### 4.4 Hasil eksekusi jalur sah (GitHub Actions, 18 Oktober 2026)
+
+Fase 0.5 akhirnya dijalankan lewat workflow `spike` di GitHub Actions — runner Azure, bukan
+VPS. Ini **batas bawah**, tetapi cukup untuk menjawab pertanyaan yang selama ini menahan
+proyek: apakah kegagalan TikTok dan YouTube berasal dari IP, atau dari toolchain.
+
+Dua eksekusi memakai daftar 80 URL yang sama (20 per platform), yt-dlp 2026.08.19:
+
+| Platform | Mode default | `--impersonate chrome` | Catatan |
+| --- | ---: | ---: | --- |
+| TikTok | 0/14 (0%) | **14/14 (100%)** | gagal karena fingerprint TLS, bukan IP |
+| Instagram | 13/13 (100%) | 13/13 (100%) | 7 URL sisanya post gambar |
+| Pinterest | 2/2 (100%) | 2/2 (100%) | 17 URL sisanya post gambar, 1 mati |
+| YouTube | 0/20 (0%) | 0/20 (0%) | bot check pada semua URL |
+
+IP keluar: `4.149.237.36` (default) dan `20.55.162.193` (impersonate). Ringkasan angka ada di
+`backend/clipora_v8_spike/RESULTS.md`; laporan mentah per URL tetap lokal karena memuat tautan
+pihak ketiga.
+
+**Temuan 1 — TikTok gagal karena fingerprint TLS, bukan reputasi IP.** Satu flag
+`--impersonate chrome` mengubah 0/14 menjadi 14/14 tanpa perubahan lain. Perbaikannya sudah
+masuk `real_media.py`: `_impersonation_target()` meminta target Chrome bila `curl_cffi`
+terpasang, dan menghilangkan opsi itu bila tidak — supaya mode demo dan tes tetap jalan di
+mesin tanpa `curl_cffi`.
+
+**Temuan 2 — YouTube tidak bisa dilayani dari IP datacenter.** Tiga client diuji terpisah
+(`android_vr`, `tv`, `web_embedded`), semuanya 0/20 dengan pesan yang sama: *Sign in to confirm
+you're not a bot*. Jadi masalahnya bukan pilihan client, melainkan IP tanpa cookie/PO token.
+Cookie akun pribadi bukan opsi (melanggar ToS dan berisiko ban), dan PO token provider berarti
+layanan tambahan yang tidak muat di jalur gratis.
+
+**Keputusan.** Kriteria 4.3 terpenuhi: TikTok 100%, dan Instagram/Pinterest ≥70% → **LANJUT**.
+Ruang lingkup publik v1: **TikTok, Instagram, Pinterest**. **YouTube ditangguhkan** dari janji
+publik sampai ada jalur sah dari IP server. Kode dan UI lokal tetap mendukung YouTube untuk
+pengujian dari IP rumah, tetapi produk publik tidak boleh mengiklankannya.
+
+**Tindak lanjut sebelum deploy:** sembunyikan YouTube dari permukaan publik (teks bantuan dan
+daftar platform di `index.html`/`assets/app.js`), sementara `platforms.py` tetap menerimanya untuk
+uji lokal. Jangan hapus extractor-nya — yang dihapus hanya janji ke pengunjung.
+
+**Yang belum terjawab.** Angka ini dari IP Azure bersama; VPS khusus bisa lebih baik atau lebih
+buruk. Konfirmasi di VPS tetap disarankan sebelum biaya bandwidth dikeluarkan. Post gambar tidak
+diukur di sini karena spike menguji video; jalur gambar sudah diuji manual (lihat STATUS).
 
 ## 5. Fase 1 — Fondasi operasional (2–3 minggu, jalur gratis)
 
@@ -379,8 +426,9 @@ Cache di depan worker bila memungkinkan.
 2. **Pinterest** kedua: ekstraksi gambar paling sederhana, memberi fitur "download gambar" lebih
    awal.
 3. **Instagram** ketiga: butuh penanganan login wall, rate limit, dan carousel.
-4. **YouTube** terakhir: paling rapuh dari IP datacenter. Jangan jadikan YouTube penentu
-   keberhasilan fase ini.
+4. **YouTube ditangguhkan.** Uji 18 Oktober 2026 menunjukkan 0/20 dari IP datacenter pada tiga
+   client berbeda; tanpa cookie/PO token tidak ada jalur sah. Jangan jadikan YouTube penentu
+   keberhasilan fase ini, dan jangan iklankan sampai ada solusi yang tidak memakai akun pribadi.
 
 ### 8.5 Target terukur
 
@@ -391,7 +439,7 @@ Angka ini dipakai untuk menilai lulus/tidak, bukan perasaan:
 | TikTok | ≥90% | Diukur dari 100 URL publik acak |
 | Pinterest | ≥95% | Ekstraksi gambar stabil |
 | Instagram | ≥80% | Login wall dan rate limit menekan angka |
-| YouTube | ≥50% | Realistis dari IP datacenter; laporkan apa adanya |
+| YouTube | ditangguhkan | 0/20 dari IP datacenter pada tiga client (4.4); ukur ulang hanya bila jalur sah ditemukan |
 
 Tambahan: p95 latensi <30 detik per unduhan, dan biaya bandwidth <$0,005 per unduhan.
 
@@ -469,7 +517,7 @@ dengan pemain mapan. Alternatif yang dipertimbangkan di
 | v0.2 (minggu 10–12) | Slideshow → MP4, ZIP, MP3 | Media proxy |
 | v0.3 (minggu 14–16) | Pinterest + Instagram | Allowlist diperluas |
 | v0.4 (minggu 18–20) | 30 halaman SEO | Fase 2.5 |
-| v1.0 (minggu 24+) | YouTube, kepatuhan lengkap | Enam bloker tertutup |
+| v1.0 (minggu 24+) | YouTube (bila ada jalur sah), kepatuhan lengkap | Enam bloker tertutup |
 
 Ini bertentangan dengan prinsip "jangan buka sebelum enam bloker tertutup". Trade-off-nya nyata:
 rilis tertutup 50 orang dengan allowlist 4 domain punya permukaan risiko jauh lebih kecil daripada
@@ -536,7 +584,7 @@ per bulan untuk itu, selamanya.
 | Risiko | Dampak | Mitigasi |
 | --- | --- | --- |
 | Platform memblokir server | Unduhan gagal massal | Rotasi egress, batas laju, deteksi dini, jalur error yang jujur |
-| YouTube menolak IP datacenter (`403`/bot check) | Fitur YouTube tidak stabil | Jangan janjikan 100%; fallback pesan jelas. **Jangan pakai cookie akun pribadi** — risiko ban akun dan pelanggaran ToS yang lebih berat |
+| YouTube menolak IP datacenter (`403`/bot check) | Fitur YouTube tidak stabil | **Terbukti 18 Okt 2026: 0/20 pada tiga client.** Tangguhkan YouTube dari janji publik (4.4). **Jangan pakai cookie akun pribadi** — risiko ban akun dan pelanggaran ToS yang lebih berat |
 | yt-dlp rusak setelah update platform | Fitur inti mati | Pin versi, tes harian, update terkontrol, alert success rate |
 | Takedown/somasi/blokir ISP | Layanan tidak bisa diakses | Mitigasi 3.3, kebijakan takedown, kepatuhan PSE, kill switch |
 | Harapan "watermark hilang total" tidak terpenuhi | Pengguna kecewa | UI menyatakan sumber yang tersedia; tidak memalsukan hasil |

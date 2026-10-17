@@ -21,7 +21,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 
 | Paket | Jumlah | Perintah |
 | --- | ---: | --- |
-| `clipora_v8_web` | 120 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
+| `clipora_v8_web` | 124 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
 | `clipora_v8_formats_lab` | 8 | idem, ganti direktori |
 | `clipora_v8_firewall_candidate` | 46 | idem |
 | `clipora_v8_verified_tls` | 35 | idem |
@@ -29,9 +29,9 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_staging_linux` | 8 | idem |
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
-| `clipora_v8_spike` | 29 | idem (fungsi murni; tanpa jaringan) |
+| `clipora_v8_spike` | 33 | idem (fungsi murni; tanpa jaringan) |
 | JavaScript frontend | 24 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **318** | |
+| **Total** | **326** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
@@ -42,7 +42,9 @@ dihardcode belum terbukti, bukan skor.
 `run_local.py --real-downloads` (atau `CLIPORA_REAL_DOWNLOADS=1`) mendaftarkan route
 `/api/v8/real/*` hanya bila tiga syarat terpenuhi: flag aktif, permintaan datang dari loopback,
 dan origin sama. `/api/v8/download` tetap `503`, dan `ready_for_public_launch` tetap `false`.
-Mode ini tidak masuk image publik: `requirements-web.lock` belum memuat yt-dlp/FFmpeg.
+Mode ini tidak masuk image publik: `requirements-web.lock` belum memuat yt-dlp/httpx/curl_cffi,
+dan image web belum memasang FFmpeg. TikTok dari IP datacenter **membutuhkan** `--impersonate`
+(`curl_cffi`); tanpa itu success rate-nya 0% (lihat bagian Fase 0.5 di bawah).
 
 | Batas | Nilai |
 | --- | --- |
@@ -72,6 +74,32 @@ Verifikasi manual 18 Oktober 2026 (browser nyata, server loopback port 8090):
 Catatan kejujuran: Instagram tanpa login hanya memberi stream resolusi rendah; Pinterest kerap
 hanya menyimpan satu ukuran asli. Angka di atas adalah hasil satu kali uji manual, bukan
 success rate — itu tetap tugas Fase 0.5 di host yang sah.
+
+## Fase 0.5 — hasil jalur sah (GitHub Actions, 18 Oktober 2026)
+
+Workflow `spike` dijalankan dari runner Azure (IP `4.149.237.36` dan `20.55.162.193`), 80 URL
+yang sama (20 per platform), yt-dlp 2026.08.19. Ini **batas bawah**, bukan VPS khusus, tetapi
+cukup untuk memisahkan masalah IP dari masalah toolchain.
+
+| Platform | Mode default | `--impersonate chrome` |
+| --- | ---: | ---: |
+| TikTok | 0/14 (0%) | **14/14 (100%)** |
+| Instagram | 13/13 (100%) | 13/13 (100%) |
+| Pinterest | 2/2 (100%) | 2/2 (100%) |
+| YouTube | 0/20 (0%) | 0/20 (0%) |
+
+- **TikTok:** kegagalan default bukan reputasi IP, melainkan fingerprint TLS. Satu flag
+  `--impersonate chrome` menaikkannya dari 0% ke 100%. `real_media.py` sekarang memakai target
+  itu bila `curl_cffi` terpasang.
+- **YouTube:** tiga client (`android_vr`, `tv`, `web_embedded`) diuji terpisah, semuanya 0/20
+  dengan *Sign in to confirm you're not a bot*. Tanpa cookie/PO token tidak ada jalur sah dari
+  IP datacenter. **YouTube ditangguhkan dari janji publik** (ROADMAP 4.4).
+- **Keputusan 4.3:** **LANJUT**. Ruang lingkup publik v1: TikTok, Instagram, Pinterest.
+- Laporan mentah: `backend/clipora_v8_spike/RESULTS.md` (ringkasan tanpa URL). Berkas per URL
+  tetap lokal di `hasil/` karena memuat tautan pihak ketiga.
+
+Post gambar tidak masuk angka ini (spike menguji video); jalur gambar tetap seperti diuji manual
+di atas.
 
 ## Bloker persetujuan publik
 
@@ -119,8 +147,10 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    success rate lintas platform tetap harus diukur di jalur sah (ROADMAP 4.2.1/4.3); mode demo
    dan image publik belum punya jalur gambar.
 7. **Mode nyata belum bisa dipaketkan ke image publik.** `requirements-web.lock` belum memuat
-   `yt-dlp`/`httpx`, dan image web belum memasang FFmpeg, jadi route `/api/v8/real/*` hanya
-   hidup di venv lokal. Selain itu kualitas sumber dibatasi platform: Instagram tanpa login
+   `yt-dlp`/`httpx`/`curl_cffi`, `build_image.py` belum menyalin `real_media.py`, dan image web
+   belum memasang FFmpeg, jadi route `/api/v8/real/*` hanya hidup di venv lokal. `curl_cffi`
+   bukan opsional untuk deployment: tanpa `--impersonate`, TikTok dari IP datacenter 0/14
+   (STATUS, Fase 0.5). Selain itu kualitas sumber dibatasi platform: Instagram tanpa login
    memberi stream resolusi rendah (360×640 pada uji), Pinterest kadang hanya menyimpan satu
    ukuran asli. UI menampilkan ukuran sebenarnya, bukan angka yang dijanjikan.
 
@@ -162,7 +192,8 @@ Python juga membawa salinan `expat` sendiri (2.8.5) yang perlu ditinjau terpisah
 
 ## Jalan berikutnya
 
-Urutan yang masuk akal: siapkan host staging Linux → tutup enam bloker di atas → audit ulang
-image → baru pertimbangkan gate publik. Rencana lengkap per fase, estimasi waktu, biaya dan
-kriteria keluar ada di [ROADMAP.md](../../ROADMAP.md). Rencana milestone historis ada di
-[docs/MVP_READINESS.md](docs/MVP_READINESS.md).
+Urutan yang masuk akal: Fase 0.5 sudah memberi lampu hijau dari IP Azure (TikTok 100% dengan
+impersonation, YouTube ditangguhkan) → siapkan host staging Linux → tutup enam bloker di atas →
+audit ulang image → baru pertimbangkan gate publik. Rencana lengkap per fase, estimasi waktu,
+biaya dan kriteria keluar ada di [ROADMAP.md](../../ROADMAP.md). Rencana milestone historis ada
+di [docs/MVP_READINESS.md](docs/MVP_READINESS.md).

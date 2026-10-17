@@ -65,7 +65,7 @@ arsitektur dan biaya — lihat bagian 7.
 
 | Kelemahan | Peluang Anda |
 | --- | --- |
-| **Hanya TikTok** | Multi-platform (TikTok + IG + Pinterest + YouTube) adalah alasan nyata untuk berpindah |
+| **Hanya TikTok** | Multi-platform (TikTok + IG + Pinterest) adalah alasan nyata untuk berpindah; YouTube baru setelah ada jalur sah dari IP server |
 | **Iklan berat + delay buatan** | UX bersih dan cepat adalah pembeda yang langsung terasa, bukan klaim |
 | **Tanpa riwayat/akun** | Riwayat lokal + unduh ulang memberi alasan kembali |
 | **Tidak transparan soal legalitas** | Halaman kepatuhan yang jujur membangun kepercayaan, terutama untuk pengguna profesional |
@@ -90,8 +90,9 @@ itu perang yang sudah selesai.
 
 ### 6.2 Tiga wedge
 
-1. **Multi-platform dalam satu tempat.** TikTok, Instagram, Pinterest, YouTube. SnapTik hanya
-   menangani satu. Ini satu-satunya alasan struktural untuk berpindah.
+1. **Multi-platform dalam satu tempat.** TikTok, Instagram, Pinterest. YouTube sengaja belum
+   dihitung: uji 18 Oktober 2026 memberi 0/20 dari IP datacenter pada tiga client (ROADMAP 4.4),
+   jadi menjanjikannya sekarang berarti menjanjikan fitur yang gagal di server.
 2. **Kecepatan dan kejujuran.** Tanpa delay buatan, tanpa popup, tampilkan ukuran file dan
    resolusi sebelum mengunduh, dan katakan terus terang bila versi tanpa watermark tidak tersedia.
 3. **Indonesia-first.** Bahasa Indonesia yang wajar, halaman bantuan lokal, dan pemahaman konteks

@@ -185,6 +185,10 @@ def _progress_hook(progress):
 def _ydl_error(exc):
     """Translate yt-dlp failures into answers a visitor can act on."""
     text = str(exc).lower()
+    if 'sign in to confirm' in text or 'not a bot' in text:
+        # YouTube answers every datacenter IP this way; see ROADMAP 4.4.
+        return MediaError('YouTube is blocking downloads from this server. '
+                          'Try TikTok, Instagram, or Pinterest instead.', 422)
     if 'no video formats' in text or 'there is no video' in text:
         return MediaError('This post contains photos only. Use the Photo Downloader.', 422)
     if 'private' in text or 'login' in text or 'not available' in text:

@@ -54,6 +54,23 @@ dan Markdown tersedia sebagai artifact. Tidak butuh VPS dan tidak butuh kartu kr
 Anggap hasilnya batas bawah: IP Azure dipakai bersama banyak penyewa, jadi bisa lebih buruk
 daripada VPS khusus.
 
+Workflow menerima tiga input opsional:
+
+| Input | Gunanya |
+| --- | --- |
+| `impersonate` | `chrome` meniru fingerprint TLS browser. **Wajib untuk TikTok dari IP datacenter.** Memasang `curl_cffi`. |
+| `extractor_args` | mis. `youtube:player_client=android_vr` untuk menguji satu client YouTube |
+| `platform` | batasi ke satu platform; mempercepat eksperimen |
+
+Contoh eksperimen: `impersonate=chrome`, `platform=youtube`,
+`extractor_args=youtube:player_client=tv`.
+
+## Hasil yang sudah tercatat
+
+Ringkasan angka ada di [RESULTS.md](RESULTS.md). Laporan mentah per URL (`.md`/`.csv`) sengaja
+tidak di-commit karena memuat tautan pihak ketiga; berkas itu tetap ditulis ke `hasil/` saat
+spike dijalankan. Yang tersimpan di repo hanya angka dan penyebab kegagalan.
+
 ### 3. Container lokal (hanya untuk memastikan alatnya jalan)
 
 ```bash
@@ -104,9 +121,10 @@ masing-masing dengan pesan berbeda:
 | Pinterest | `No video formats found!` | pin gambar |
 
 Baris seperti ini masuk bagian **Post hanya gambar** dan tidak masuk penyebut success rate
-video. Ini bukan berarti aman: artinya fitur unduh gambar **belum punya jalur ekstraksi
-sama sekali** lewat yt-dlp. Jangan janjikan unduh gambar ke pengguna sebelum ada jalur
-terpisah yang diuji sendiri.
+video. Alat ini tetap tidak mengukur jalur gambar: produksi memakai pembaca per platform di
+`clipora_v8_web/real_media.py` (TikTok `imagePost`, Instagram carousel, Pinterest
+`originals`/`og:image`), yang diuji manual di STATUS, bukan di sini. Jangan mencampur kedua
+angka.
 
 ### Angka dari IP rumah bukan keputusan
 
