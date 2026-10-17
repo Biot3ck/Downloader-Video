@@ -8,7 +8,8 @@ egress, TLS dan audit paket OS.
 > `ready_for_public_launch: false`. Enam bloker persetujuan publik belum dapat ditutup tanpa host
 > staging Linux terpisah. Rincian ada di [STATUS.md](backend/clipora_v8_web/STATUS.md).
 >
-> Rencana menuju produk publik ada di [ROADMAP.md](ROADMAP.md).
+> Rencana menuju produk publik ada di [ROADMAP.md](ROADMAP.md). Analisis pasar dan strategi
+> bersaing dengan snaptik.app ada di [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md).
 
 ## Isi repositori
 
