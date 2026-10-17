@@ -1,6 +1,6 @@
 # Status Clipora v8
 
-Diperbarui: 17 Oktober 2026. **Dokumen ini adalah satu-satunya sumber angka tes dan status
+Diperbarui: 18 Oktober 2026. **Dokumen ini adalah satu-satunya sumber angka tes dan status
 bloker.** Dokumen di [docs/](docs/) adalah catatan audit pada saat penulisannya; bila angkanya
 berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 
@@ -10,8 +10,8 @@ berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 | --- | --- |
 | Siap unduhan publik? | **Tidak.** Gate `503`, `ready_for_public_launch: false` |
 | Siap demo internal? | **Ya**, dengan state privat dan hanya loopback |
-| Fitur aktif | Pengenalan link Video, Photo & Audio; format Video, Video HD, MP3 |
-| Fitur belum ada | Ekstraksi/konversi media |
+| Fitur aktif | Pengenalan link Video, Photo & Audio; format Video, Video HD, MP3; **unduhan nyata opt-in** (`--real-downloads`, hanya loopback) |
+| Fitur belum ada | Ekstraksi media di image publik; proxy media berskala produksi |
 | Bloker publik terbuka | 6 (butuh host staging Linux terpisah) |
 | Jalur rilis | Disiplin enam bloker; rilis bertahap/undangan ditolak (17 Okt 2026) |
 
@@ -21,7 +21,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 
 | Paket | Jumlah | Perintah |
 | --- | ---: | --- |
-| `clipora_v8_web` | 95 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
+| `clipora_v8_web` | 120 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
 | `clipora_v8_formats_lab` | 8 | idem, ganti direktori |
 | `clipora_v8_firewall_candidate` | 46 | idem |
 | `clipora_v8_verified_tls` | 35 | idem |
@@ -30,12 +30,48 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
 | `clipora_v8_spike` | 29 | idem (fungsi murni; tanpa jaringan) |
-| JavaScript frontend | 16 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **285** | |
+| JavaScript frontend | 24 | `node clipora_v8_web/test_frontend_async.cjs` |
+| **Total** | **318** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
 dihardcode belum terbukti, bukan skor.
+
+## Unduhan nyata (opt-in)
+
+`run_local.py --real-downloads` (atau `CLIPORA_REAL_DOWNLOADS=1`) mendaftarkan route
+`/api/v8/real/*` hanya bila tiga syarat terpenuhi: flag aktif, permintaan datang dari loopback,
+dan origin sama. `/api/v8/download` tetap `503`, dan `ready_for_public_launch` tetap `false`.
+Mode ini tidak masuk image publik: `requirements-web.lock` belum memuat yt-dlp/FFmpeg.
+
+| Batas | Nilai |
+| --- | --- |
+| Ukuran per file | 100 MB |
+| Ukuran per gambar | 10 MB |
+| Total carousel | 50 MB, maksimum 20 gambar |
+| Durasi video | 600 detik |
+| Unduhan bersamaan | 2 |
+| TTL token | 900 detik |
+| Cache | 1 jam |
+
+Verifikasi manual 18 Oktober 2026 (browser nyata, server loopback port 8090):
+
+| Kasus | Hasil |
+| --- | --- |
+| TikTok video standar | 720×1280, 20,8 MB, H.264/AAC |
+| TikTok video HD | 1080×1920, 37,6 MB, H.264/AAC |
+| TikTok MP3 | MPEG layer III 192 kbps 44,1 kHz stereo |
+| TikTok photo | 7 gambar, ZIP 849 KB, preview 816×1452 |
+| Instagram reel | 360×640, 1,2 MB; durasi diisi dari `loadedmetadata` |
+| Instagram carousel | 2 gambar, ZIP |
+| YouTube video | 1280×720, 9,9 MB, 30 detik |
+| YouTube MP3 | 192 kbps, 386,5 detik, 9,3 MB |
+| Pinterest video | 360×640, 1,9 MB |
+| Pinterest image | 361×543, JPEG |
+
+Catatan kejujuran: Instagram tanpa login hanya memberi stream resolusi rendah; Pinterest kerap
+hanya menyimpan satu ukuran asli. Angka di atas adalah hasil satu kali uji manual, bukan
+success rate — itu tetap tugas Fase 0.5 di host yang sah.
 
 ## Bloker persetujuan publik
 
@@ -66,8 +102,9 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    Video. Belum ada endpoint `/api/v8/audio` terpisah — sengaja, karena ekstraksi audio adalah
    turunan dari post video.
 3. **Kandidat format video/MP3 belum terintegrasi.** `clipora_v8_formats_lab` tidak diimpor
-   aplikasi, tidak disajikan HTTP, dan tidak masuk image. MP3 yang tampil di UI masih berupa
-   preferensi dan file sampel, bukan konversi FFmpeg nyata.
+   aplikasi, tidak disajikan HTTP, dan tidak masuk image. Di mode demo, MP3 masih file sampel.
+   Di mode nyata (`--real-downloads`), MP3 adalah konversi FFmpeg sungguhan dari stream audio
+   post, dan video dinormalkan ke H.264/AAC agar bisa diputar browser.
 4. **Kode arsip Tools** (`tools_archive/device-preview`) disimpan sebagai referensi, tidak
    dimuat produk, dan diuji mengembalikan `404`.
 5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan empat file sampel di
@@ -75,12 +112,39 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    itu bukan isi post yang ditempel; tidak ada request keluar. File demo tidak masuk image
    produksi (allowlist `FILES` di `build_image.py`), dan route-nya tidak pernah didaftarkan pada
    origin HTTPS. Gate publik tetap `503`.
-6. **Post gambar belum punya jalur ekstraksi.** Uji 12 URL (17 Okt 2026, IP rumah) menunjukkan
-   8/8 URL video terbaca, tetapi 4/4 post gambar gagal: TikTok menolak `/photo/` (`Unsupported
-   URL`), Instagram membalas `There is no video in this post`, Pinterest `No video formats
-   found!`. yt-dlp hanya menangani video, jadi halaman Photo Downloader baru menyelesaikan
-   bagian pengenalan dan tampilan — bukan pengambilan gambar. Pekerjaan ini masuk Fase 2
-   (ROADMAP 4.2.1) dan harus selesai sebelum fitur gambar dijanjikan ke pengguna.
+6. **Post gambar hanya tertangani di mode nyata.** Uji 12 URL (17 Okt 2026, IP rumah) dengan
+   jalur yt-dlp lama menunjukkan 4/4 post gambar gagal. `real_media.py` sekarang punya pembaca
+   per platform (TikTok `imagePost`, Instagram carousel, Pinterest `originals` + `og:image`)
+   dan sudah diuji manual: TikTok 7 gambar, Instagram 2 gambar, Pinterest 1 gambar. Angka
+   success rate lintas platform tetap harus diukur di jalur sah (ROADMAP 4.2.1/4.3); mode demo
+   dan image publik belum punya jalur gambar.
+7. **Mode nyata belum bisa dipaketkan ke image publik.** `requirements-web.lock` belum memuat
+   `yt-dlp`/`httpx`, dan image web belum memasang FFmpeg, jadi route `/api/v8/real/*` hanya
+   hidup di venv lokal. Selain itu kualitas sumber dibatasi platform: Instagram tanpa login
+   memberi stream resolusi rendah (360×640 pada uji), Pinterest kadang hanya menyimpan satu
+   ukuran asli. UI menampilkan ukuran sebenarnya, bukan angka yang dijanjikan.
+
+## Bukti uji manual mode nyata (18 Okt 2026)
+
+Server `--real-downloads` di port 8090, browser Chromium, IP rumah `88.230.177.250`. Ini uji
+fungsional satu kali, **bukan** success rate; angka success rate tetap milik Fase 0.5.
+
+| Post | Format | Hasil |
+| --- | --- | --- |
+| TikTok `@tiktok/video/7694797676306615583` | Video | 720×1280, 49,9 s, 20,8 MB, H.264/AAC |
+| idem | Video HD | 1080×1920, 49,9 s, 37,6 MB, H.264/AAC |
+| idem | MP3 | 192 kbps, 44,1 kHz, stereo, 1,2 MB |
+| TikTok `@catphotovideo0/photo/7690397576977206536` | Gambar | 7 gambar, ZIP 849 KB, preview 816×1452 |
+| Instagram `reel/DeewiSPpCrm` | Video | 360×640, 10,9 s, 1,2 MB |
+| Instagram `p/DanZcCTDrdx` | Gambar | 2 gambar, ZIP |
+| YouTube `watch?v=n_G4dQMKYN0` | Video | 1280×720, 30,1 s, 9,9 MB |
+| YouTube `watch?v=wGA27zJEnaU` | MP3 | 192 kbps, 386,5 s, 9,3 MB |
+| Pinterest `pin/2392606047526589` | Video | 360×640, 34,9 s, 1,9 MB |
+| Pinterest `pin/146367056616629683` | Gambar | JPEG 361×543, 37 KB |
+
+Catatan: post gambar yang ditempel di halaman Video sekarang ditolak dengan pesan
+"This post contains photos only. Use the Photo Downloader.", dan opsi unduhan disembunyikan.
+Durasi yang tidak dilaporkan platform (mis. Instagram) diisi dari `loadedmetadata` pemutar.
 
 ## Patch OS tertunda
 

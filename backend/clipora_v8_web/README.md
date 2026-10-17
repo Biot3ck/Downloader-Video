@@ -10,6 +10,7 @@ link dan pemeriksaan platform; tidak ada ekstraksi, konversi, iklan, atau penuli
 | `/api/v8/validate` | Aktif — hanya mengenali platform |
 | Video, Photo & Audio Downloader | Aktif sampai tahap pemeriksaan link |
 | Mode demo (`--demo-downloads`) | Opsional — preview dan file contoh lokal, bukan isi post |
+| Mode nyata (`--real-downloads`) | Opsional, loopback-only — ekstraksi media sungguhan via yt-dlp/FFmpeg |
 | `/healthz` | `ready_for_public_launch: false` |
 
 Status lengkap, angka tes, dan blocker ada di [STATUS.md](STATUS.md). Keputusan desain dan batas
@@ -63,6 +64,35 @@ Tombol **Paste** membaca clipboard lewat `navigator.clipboard.readText()` lalu l
 link. Browser bisa menolak akses clipboard; dalam hal itu UI meminta pengguna menempel manual
 dengan Cmd+V. Clipboard hanya dibaca setelah tombol ditekan, tidak ada pembacaan otomatis.
 
+### Mode nyata unduhan
+
+Untuk mengunduh media sungguhan dari post (bukan sampel), jalankan dengan flag nyata:
+
+```sh
+.venv/bin/python -B clipora_v8_web/run_local.py --port 8090 --real-downloads
+```
+
+Flag ini hanya mendaftarkan route `/api/v8/real/*` bila tiga syarat terpenuhi sekaligus: flag
+aktif, request datang dari loopback, dan origin sama. `POST /api/v8/download` tetap `503`, dan
+`/healthz` melaporkan `real_downloads_enabled: true` tanpa mengubah `ready_for_public_launch`.
+
+| Route | Perilaku |
+| --- | --- |
+| `POST /api/v8/real/preview` | Membaca metadata post dan mengembalikan URL preview bertanda tangan |
+| `GET /api/v8/real/media/<token>` | Menyajikan preview inline (mendukung HTTP Range untuk video) |
+| `POST /api/v8/real/download` | Menyiapkan file jadi (MP4, MP3, gambar, atau ZIP carousel) |
+| `GET /api/v8/real/file/<token>` | Mengirim file sebagai lampiran |
+
+Cara kerjanya: video/audio diekstrak dengan yt-dlp, dinormalkan FFmpeg ke H.264/AAC (MP4) atau
+MP3 192 kbps; gambar dibaca per platform (TikTok `imagePost`, Instagram carousel, Pinterest
+`originals`/`og:image`) lalu diproxy lewat CDN bertanda tangan. Preview video/audio memakai file
+nyata yang diunduh lazy dan di-cache, jadi yang diputar sama dengan yang diunduh.
+
+Batas: 100 MB per file, 10 MB per gambar, 50 MB total carousel, 20 gambar, durasi 600 detik,
+2 unduhan bersamaan, token berlaku 900 detik, cache 1 jam. Mode ini **belum** masuk image
+publik: `requirements-web.lock` belum memuat yt-dlp, dan pemisahan runtime web dari worker masih
+deviasi yang tercatat di [STATUS.md](STATUS.md).
+
 ## Menjalankan tes
 
 Dari direktori `backend`:
@@ -89,6 +119,7 @@ backend/
   clipora_v8_firewall_candidate/ kandidat three-tier kernel/mTLS
   clipora_v8_staging_linux/    preflight host Linux
   clipora_v8_formats_lab/      kandidat kebijakan format (tidak diimpor produk)
+  clipora_v8_spike/            alat uji kelayakan ekstraksi (Fase 0.5)
 ```
 
 ## Dokumentasi

@@ -197,10 +197,15 @@ Uji bentuk URL untuk memastikan daftar tidak berisi tautan mati:
   TikTok `Unsupported URL … /photo/`, Instagram `There is no video in this post`,
   Pinterest `No video formats found!`.
 
-Artinya **unduh gambar belum punya jalur ekstraksi sama sekali**. yt-dlp hanya menangani video;
-post gambar butuh pengambilan terpisah per platform (mis. `image_post_info` TikTok, GraphQL
-Instagram, meta halaman Pinterest). Ini pekerjaan baru yang harus masuk Fase 2 sebelum fitur
-gambar boleh dijanjikan ke pengguna — dan sebelum halaman Photo Downloader dianggap selesai.
+Artinya **unduh gambar belum punya jalur ekstraksi sama sekali** lewat yt-dlp; post gambar butuh
+pengambilan terpisah per platform (mis. `image_post_info` TikTok, GraphQL Instagram, meta halaman
+Pinterest). Ini pekerjaan baru yang harus masuk Fase 2 sebelum fitur gambar boleh dijanjikan ke
+pengguna — dan sebelum halaman Photo Downloader dianggap selesai.
+
+**Tindak lanjut 18 Oktober 2026:** jalur gambar sudah dibuat di `real_media.py` (mode nyata
+opt-in) dan berhasil di uji manual untuk TikTok (7 gambar), Instagram (2 gambar), dan Pinterest
+(1 gambar). Yang belum ada adalah pengukuran success rate lintas platform di jalur sah; itu tetap
+tugas Fase 0.5 dan kriteria 4.3.
 
 Angka dari IP rumah tidak dipakai untuk kriteria 4.3; lihat README alat.
 

@@ -25,6 +25,7 @@ ada di [STATUS.md](STATUS.md); rincian audit ada di [docs/](docs/).
 | `owned_artifacts.py` | Sweep artifact idle dan retensi file |
 | `rate_limit.py` | Limiter fixed-window SQLite, IP di-hash HMAC |
 | `platforms.py` | Allowlist pengenalan URL platform |
+| `real_media.py` | Mode nyata opt-in: probe yt-dlp, ekstraksi gambar per platform, normalisasi MP4/MP3, token HMAC, proxy Range |
 | `clipora_v8_browser_real_mp4/job_store.py` | Queue durable: `_admit`, `connection`, `transaction`, `finish` |
 | `clipora_v8_browser_real_mp4/artifact_delivery.py` | `PinnedVideoResponse` — pengiriman file yang dipin ke inode |
 

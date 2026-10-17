@@ -36,17 +36,17 @@
           <div class="preview-stage" id="preview-stage">
             <video id="preview-video" class="preview-media" controls playsinline preload="metadata" hidden></video>
             <audio id="preview-audio" class="preview-media" controls preload="metadata" hidden></audio>
-            <img id="preview-image" class="preview-media" alt="Bundled sample preview" hidden>
+            <img id="preview-image" class="preview-media" alt="" hidden>
             <p id="preview-placeholder" class="preview-placeholder">Loading preview…</p>
           </div>
           <div class="preview-head">
-            <span class="preview-badge">Sample</span>
+            <span id="preview-badge" class="preview-badge"></span>
             <span id="preview-platform" class="preview-platform"></span>
             <span id="preview-duration" class="preview-duration"></span>
           </div>
           <h2 id="preview-title" class="preview-title"></h2>
           <p id="preview-caption" class="preview-caption"></p>
-          <p class="preview-note">Bundled sample media. The post you pasted was not fetched or inspected.</p>
+          <p id="preview-note" class="preview-note"></p>
         </div>
         <fieldset id="video-formats" class="format-picker" aria-describedby="format-note" hidden>
           <legend>Choose download type</legend>

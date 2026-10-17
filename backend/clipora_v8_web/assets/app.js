@@ -17,18 +17,25 @@ const previewAudio=document.getElementById('preview-audio'),previewStage=documen
 const previewImage=document.getElementById('preview-image'),previewPlaceholder=document.getElementById('preview-placeholder');
 const previewTitle=document.getElementById('preview-title'),previewCaption=document.getElementById('preview-caption');
 const previewPlatform=document.getElementById('preview-platform'),previewDuration=document.getElementById('preview-duration');
+const previewBadge=document.getElementById('preview-badge'),previewNote=document.getElementById('preview-note');
 const formatPicker=document.getElementById('video-formats'),formatNote=document.getElementById('format-note');
 const actions=document.getElementById('download-actions'),downloadButton=document.getElementById('download-file');
 const downloadLabel=document.getElementById('download-button-label'),downloadStatus=document.getElementById('download-status');
 const availabilityText=document.getElementById('availability-text'),noticeText=document.getElementById('download-notice-text');
 const links=document.querySelectorAll('.navigation [data-view]');
-let currentView=null,controller=null,revision=0,recognized=null,demoEnabled=false,downloading=false;
+let currentView=null,controller=null,revision=0,recognized=null,demoEnabled=false,realEnabled=false,downloading=false,previewSecondsShown=false;
 const drafts={video:'',photo:'',audio:''};
 const sampleNotes={
   video:'Bundled sample: 640×360 video, 3 seconds. Not the post you pasted.',
   hd:'Bundled sample: 1280×720 video, 3 seconds. Not the post you pasted.',
   mp3:'Bundled sample: MP3 audio, 3 seconds. Not the post you pasted.',
   image:'Bundled sample: 1280×720 image. Not the post you pasted.'
+};
+const realNotes={
+  video:'Real download: standard quality, up to 720p.',
+  hd:'Real download: highest source quality, up to 1080p.',
+  mp3:'Real download: MP3 audio at 192 kbps.',
+  image:'Real download: original image files. Carousels are saved as a ZIP.'
 };
 const unavailableNotes={
   video:'Video downloads are not available in this build.',
@@ -44,7 +51,12 @@ function currentFormat(){
 }
 function updateFormatNote(){
   const key=currentFormat();
-  formatNote.textContent=demoEnabled?(sampleNotes[key]||''):(unavailableNotes[key]||'');
+  formatNote.textContent=realEnabled?(realNotes[key]||''):demoEnabled?(sampleNotes[key]||''):(unavailableNotes[key]||'');
+  updateDownloadLabel();
+}
+function updateDownloadLabel(){
+  const view=views[currentView],key=currentFormat();
+  downloadLabel.textContent=view?.kind==='images'?'Download image':key==='mp3'?'Download MP3':'Download video';
 }
 function hidePreview(){
   previewCard.hidden=true;
@@ -52,7 +64,9 @@ function hidePreview(){
   previewStage.classList.remove('audio-stage');
   previewVideo.removeAttribute('src');previewVideo.removeAttribute('poster');
   previewAudio.removeAttribute('src');previewImage.removeAttribute('src');
+  previewImage.alt='';
   previewTitle.textContent='';previewCaption.textContent='';previewPlatform.textContent='';previewDuration.textContent='';
+  previewBadge.textContent='';previewNote.textContent='';
   previewPlaceholder.textContent='Loading preview…';
 }
 function hideDownload(){
@@ -72,6 +86,26 @@ for(const format of ['video','hd','mp3']){
     downloadStatus.textContent='';updateFormatNote();
   });
 }
+// Some platforms omit the duration until the media itself is loaded.
+previewVideo.addEventListener('loadedmetadata',()=>{
+  if(previewSecondsShown)return;
+  const seconds=Math.round(previewVideo.duration);
+  if(!Number.isFinite(seconds)||seconds<=0)return;
+  previewSecondsShown=true;
+  previewDuration.textContent=previewDuration.textContent?seconds+'s · '+previewDuration.textContent:seconds+'s';
+});
+function describeAvailability(){
+  if(realEnabled){
+    availabilityText.textContent='Live · real download';
+    noticeText.textContent='Paste a link to preview and download the post. Only download media you own or have permission to use.';
+  }else if(demoEnabled){
+    availabilityText.textContent='Demo · sample file';
+    noticeText.textContent='Demo mode returns a bundled sample file. The post you pasted is never downloaded.';
+  }else{
+    availabilityText.textContent='Downloads unavailable';
+    noticeText.textContent='Public downloads are currently unavailable. You can check whether your link uses a supported platform.';
+  }
+}
 function navigate(focus=false){
   const key=location.hash.slice(1),next=Object.hasOwn(views,key)?key:'video';
   if(currentView===next)return;
@@ -84,8 +118,7 @@ function navigate(focus=false){
   document.getElementById('hero-description').textContent=view.description;document.title=view.label+' · Clipora';
   document.getElementById('link-view').hidden=!view.kind;
   result.hidden=true;form.removeAttribute('aria-busy');
-  availabilityText.textContent='Downloads unavailable';
-  noticeText.textContent='Public downloads are currently unavailable. You can check whether your link uses a supported platform.';
+  describeAvailability();
   if(view.kind){
     input.value=drafts[next];document.getElementById('url-label').textContent=view.input;input.placeholder=view.placeholder;
     document.getElementById('form-caption').textContent=view.caption;document.getElementById('platform-help').textContent=view.help;
@@ -94,40 +127,56 @@ function navigate(focus=false){
   }
   if(focus)document.getElementById('page-title').focus({preventScroll:true});
 }
-async function loadPreview(view,operation){
-  const previewKind=view.previewKind||view.kind;
+async function loadPreview(view,operation,mode='demo'){
+  const previewKind=view.previewKind||view.kind,real=mode==='real';
   previewCard.hidden=false;
+  previewSecondsShown=false;
   previewVideo.hidden=true;previewAudio.hidden=true;previewImage.hidden=true;previewPlaceholder.hidden=false;
   previewStage.classList.toggle('audio-stage',previewKind==='audio');
   previewPlaceholder.textContent='Loading preview…';
   previewTitle.textContent='';previewCaption.textContent='';previewPlatform.textContent='';previewDuration.textContent='';
   try{
-    const response=await fetch('/api/v8/demo/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:input.value.trim(),media_kind:previewKind}),cache:'no-store',credentials:'same-origin'});
+    const response=await fetch(real?'/api/v8/real/preview':'/api/v8/demo/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:input.value.trim(),media_kind:previewKind}),cache:'no-store',credentials:'same-origin'});
     if(operation!==revision)return;
     let data=null;
     try{data=await response.json();}catch{data=null;}
     if(operation!==revision)return;
-    if(!response.ok||!data||data.sample!==true||data.network_access_performed!==false||typeof data.preview_url!=='string'||!data.preview_url.startsWith('/api/v8/demo/preview/')||typeof data.caption!=='string'||!Object.hasOwn(names,data.platform))throw Error('preview');
+    const failure=new Error('preview');
+    if(real&&!response.ok&&data&&typeof data.detail==='string'&&data.detail){
+      failure.message=data.detail;
+      // A 4xx answer means this post cannot be downloaded in this view at all.
+      if(response.status<500)failure.guidance=true;
+    }
+    if(real){
+      if(!response.ok||!data||data.real!==true||data.network_access_performed!==true||data.media_kind!==previewKind||typeof data.preview_url!=='string'||!data.preview_url.startsWith('/api/v8/real/media/')||typeof data.caption!=='string'||!Object.hasOwn(names,data.platform))throw failure;
+    }else if(!response.ok||!data||data.sample!==true||data.network_access_performed!==false||typeof data.preview_url!=='string'||!data.preview_url.startsWith('/api/v8/demo/preview/')||typeof data.caption!=='string'||!Object.hasOwn(names,data.platform))throw Error('preview');
     previewPlaceholder.hidden=true;
+    previewBadge.textContent=real?'Live':'Sample';
+    previewNote.textContent=real?'Fetched from '+names[data.platform]+' just now. Only download media you own or have permission to use.':'Bundled sample media. Not the post you pasted.';
     if(previewKind==='audio'){
       previewAudio.setAttribute('src',data.preview_url);previewAudio.hidden=false;
     }else if(view.kind==='images'){
+      previewImage.alt=real?'Preview of the first image in this '+names[data.platform]+' post':'Bundled sample image';
       previewImage.setAttribute('src',data.preview_url);previewImage.hidden=false;
     }else{
       previewVideo.setAttribute('src',data.preview_url);
-      if(typeof data.poster_url==='string'&&data.poster_url.startsWith('/api/v8/demo/preview/'))previewVideo.setAttribute('poster',data.poster_url);
+      const prefix=real?'/api/v8/real/media/':'/api/v8/demo/preview/';
+      if(typeof data.poster_url==='string'&&data.poster_url.startsWith(prefix))previewVideo.setAttribute('poster',data.poster_url);
       previewVideo.hidden=false;
     }
-    previewTitle.textContent=typeof data.title==='string'&&data.title?data.title:names[data.platform]+' sample';
+    previewTitle.textContent=typeof data.title==='string'&&data.title?data.title:names[data.platform]+(real?' post':' sample');
     previewCaption.textContent=data.caption;
     previewPlatform.textContent=names[data.platform];
     const meta=[];
-    if(typeof data.duration_seconds==='number')meta.push(data.duration_seconds+'s');
+    if(typeof data.duration_seconds==='number'){meta.push(data.duration_seconds+'s');previewSecondsShown=true;}
     if(typeof data.width==='number'&&typeof data.height==='number')meta.push(data.width+'×'+data.height);
+    if(real&&typeof data.image_count==='number'&&data.image_count>1)meta.push(data.image_count+' images');
     previewDuration.textContent=meta.join(' · ');
-  }catch{
+  }catch(error){
     if(operation!==revision)return;
-    previewPlaceholder.hidden=false;previewPlaceholder.textContent='Preview unavailable right now.';
+    previewPlaceholder.hidden=false;
+    previewPlaceholder.textContent=error&&typeof error.message==='string'&&error.message!=='preview'?error.message:'Preview unavailable right now.';
+    if(error?.guidance){formatPicker.hidden=true;actions.hidden=true;downloadStatus.textContent='';}
   }
 }
 async function check(){
@@ -148,12 +197,21 @@ async function check(){
     if(!response.ok)throw Error([400,422].includes(response.status)&&typeof data?.detail==='string'?data.detail:'We could not check this link. Please try again.');
     if(!data||data.media_kind!==view.kind||!Object.hasOwn(names,data.platform)||data.public_downloads_enabled!==false||data.network_access_performed!==false)throw Error('This link could not be checked. Please try again.');
     demoEnabled=data.demo_downloads_enabled===true;
+    realEnabled=data.real_downloads_enabled===true;
     recognized={url:input.value.trim(),kind:view.kind,platform:data.platform};
     formatPicker.hidden=view.kind!=='video'||Boolean(view.format);
     updateFormatNote();
-    if(demoEnabled){
+    if(realEnabled){
       actions.hidden=false;
-      downloadLabel.textContent=view.format==='mp3'?'Download MP3':view.kind==='images'?'Download sample image':'Download sample';
+      updateDownloadLabel();
+      availabilityText.textContent='Live · real download';
+      noticeText.textContent='Clipora fetches this post from '+names[data.platform]+'. Only download media you own or have permission to use.';
+      showResult(names[data.platform]+' link recognized','Preview and download options are below. The file comes from the post you pasted.');
+      loadPreview(view,operation,'real');
+    }else if(demoEnabled){
+      actions.hidden=false;
+      updateDownloadLabel();
+      downloadLabel.textContent=view.kind==='images'?'Download sample image':currentFormat()==='mp3'?'Download MP3':'Download sample';
       availabilityText.textContent='Demo · sample file';
       noticeText.textContent='Demo mode returns a bundled sample file. The post you pasted is never downloaded.';
       showResult(names[data.platform]+' link recognized','Preview and download options are below. Everything here comes from the bundled sample.');
@@ -199,23 +257,32 @@ pasteButton.addEventListener('click',async()=>{
 });
 downloadButton.addEventListener('click',async()=>{
   if(!recognized||downloading)return;
-  const format=currentFormat();
-  downloading=true;downloadButton.disabled=true;downloadStatus.textContent='Preparing your sample file…';
+  const format=currentFormat(),real=realEnabled;
+  downloading=true;downloadButton.disabled=true;
+  downloadStatus.textContent=real?'Preparing your file…':'Preparing your sample file…';
   try{
-    const response=await fetch('/api/v8/demo/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:recognized.url,media_kind:recognized.kind,format}),cache:'no-store',credentials:'same-origin'});
+    const response=await fetch(real?'/api/v8/real/download':'/api/v8/demo/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:recognized.url,media_kind:recognized.kind,format}),cache:'no-store',credentials:'same-origin'});
     if(response.status===429)throw Error('Too many requests. Please wait a moment and try again.');
-    if(response.status>=500)throw Error('The sample file is unavailable right now.');
-    let data;
-    try{data=await response.json();}catch{throw Error('The sample file could not be prepared.');}
-    if(!response.ok)throw Error([400,422].includes(response.status)&&typeof data?.detail==='string'?data.detail:'The sample file could not be prepared.');
-    if(!data||data.sample!==true||data.network_access_performed!==false||typeof data.url!=='string'||!data.url.startsWith('/api/v8/demo/file/'))throw Error('The sample file could not be prepared.');
-    const filename=typeof data.filename==='string'?data.filename:'clipora-sample';
-    downloadStatus.textContent='Sample file ready: '+filename;
-    const link=document.createElement('a');
-    link.href=data.url;link.download=filename;link.rel='noopener';
-    if(typeof link.click==='function')link.click();
+    let data=null;
+    try{data=await response.json();}catch{data=null;}
+    if(!response.ok)throw Error(typeof data?.detail==='string'?data.detail:(real?'The file could not be prepared right now.':'The sample file is unavailable right now.'));
+    if(real){
+      if(!data||data.real!==true||data.network_access_performed!==true||typeof data.url!=='string'||!data.url.startsWith('/api/v8/real/file/'))throw Error('The file could not be prepared.');
+      const filename=typeof data.filename==='string'?data.filename:'clipora-download';
+      downloadStatus.textContent='File ready: '+filename;
+      const link=document.createElement('a');
+      link.href=data.url;link.download=filename;link.rel='noopener';
+      if(typeof link.click==='function')link.click();
+    }else{
+      if(!data||data.sample!==true||data.network_access_performed!==false||typeof data.url!=='string'||!data.url.startsWith('/api/v8/demo/file/'))throw Error('The sample file could not be prepared.');
+      const filename=typeof data.filename==='string'?data.filename:'clipora-sample';
+      downloadStatus.textContent='Sample file ready: '+filename;
+      const link=document.createElement('a');
+      link.href=data.url;link.download=filename;link.rel='noopener';
+      if(typeof link.click==='function')link.click();
+    }
   }catch(error){
-    downloadStatus.textContent=error.message||'The sample file could not be prepared.';
+    downloadStatus.textContent=error.message||'The file could not be prepared.';
   }finally{
     downloading=false;downloadButton.disabled=false;
   }
@@ -225,3 +292,13 @@ document.querySelector('.skip-link').addEventListener('click',event=>{event.prev
 window.addEventListener('pagehide',()=>{if(currentView in drafts)drafts[currentView]=input.value;controller?.abort();revision++;});
 window.addEventListener('pageshow',event=>{if(event.persisted){currentView=null;navigate();}});
 navigate();
+// The build mode is known before the first check; reflect it in the availability line.
+fetch('/api/v8/ui/config',{cache:'no-store',credentials:'same-origin'})
+  .then(response=>response.ok?response.json():null)
+  .then(data=>{
+    if(!data||typeof data!=='object')return;
+    realEnabled=data.real_downloads_enabled===true;
+    demoEnabled=data.demo_downloads_enabled===true;
+    if(!recognized&&result.hidden)describeAvailability();
+  })
+  .catch(()=>{});

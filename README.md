@@ -52,6 +52,18 @@ Untuk mencoba alur unduhan tanpa internet, tambahkan `--demo-downloads`:
 Setelah link dikenali, opsi Video / Video HD / MP3 muncul dan tombol Download mengirim **file
 contoh** yang dibundel di repo — bukan isi post asli. `POST /api/v8/download` tetap `503`.
 
+Untuk mengunduh media sungguhan dari post, pakai mode nyata (opt-in, hanya loopback):
+
+```sh
+.venv/bin/python -B clipora_v8_web/run_local.py --port 8090 --real-downloads
+```
+
+Mode ini butuh `yt-dlp`, `ffmpeg`, dan `ffprobe` di `PATH` (sudah ada di image worker). Yang
+terjadi: link dibaca, preview memutar file asli, lalu tombol Download menyimpan MP4 (H.264/AAC),
+MP3 (192 kbps), atau gambar/ZIP carousel. Batasnya 100 MB per file, 10 menit durasi, 20 gambar
+per carousel. Route `/api/v8/real/*` tidak didaftarkan pada image publik dan gate publik tetap
+`503`. Lihat [STATUS.md](backend/clipora_v8_web/STATUS.md) untuk hasil verifikasi manual.
+
 ## Menjalankan tes
 
 ```sh
