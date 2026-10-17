@@ -53,7 +53,7 @@ produk** dan mana yang masih **kandidat offline**.
 
 | Komponen | Kondisi | Dipakai produk? | Celah |
 | --- | --- | --- | --- |
-| UI dua menu + preview + demo download | Jalan | Ya (loopback) | Preview memakai sampel, bukan metadata nyata |
+| UI tiga menu + preview + demo download | Jalan | Ya (loopback) | Preview memakai sampel, bukan metadata nyata |
 | `POST /api/v8/download` | Sengaja `503` | Tidak | Belum ada implementasi |
 | Queue durable + artifact delivery | Ada, teruji offline | Tidak | Belum tersambung ke API publik |
 | Ownership/session + Range/HEAD | Ada, teruji | Tidak | Belum dipasang di jalur publik |
@@ -388,14 +388,14 @@ Tambahan: p95 latensi <30 detik per unduhan, dan biaya bandwidth <$0,005 per und
 | **Slideshow → MP4** | Belum ada | Gabungkan gambar + musik jadi video; ini fitur yang paling dicari untuk TikTok |
 | **Download All (ZIP)** | Belum ada | Unduh seluruh slide sekaligus, urutan benar |
 | Video HD | Kandidat | Integrasikan `clipora_v8_formats_lab`, tampilkan ukuran/bitrate, jelaskan bila HD tidak tersedia |
-| MP3 | Preferensi UI, belum nyata | Konversi via FFmpeg, tampilkan bitrate, batasi durasi |
+| MP3 | Halaman Audio aktif, konversi belum nyata | Konversi via FFmpeg, tampilkan bitrate, batasi durasi |
 | Gambar & album | Backend ada, extractor belum | Extractor Pinterest, carousel TikTok/IG, ZIP, urutan gambar, batas jumlah |
 | Progres unduhan | Belum ada | SSE atau polling; tampilkan tahap (fetch → convert → siap) |
 | Aksesibilitas & mobile | Baik, perlu audit | Audit keyboard, screen reader, kontras, 320px |
 
-**Kriteria keluar:** dua menu (Video, Photo) berfungsi penuh tanpa label `Soon`, ketiga format
-(Video, Video HD, MP3) benar-benar menghasilkan file, dan tidak ada elemen UI yang menjanjikan
-fitur yang belum ada. History sudah diputuskan keluar dari scope — jangan dimasukkan kembali
+**Kriteria keluar:** tiga menu (Video, Photo, Audio) berfungsi penuh tanpa label `Soon`, ketiga
+format (Video, Video HD, MP3) benar-benar menghasilkan file, dan tidak ada elemen UI yang
+menjanjikan fitur yang belum ada. History sudah diputuskan keluar dari scope — jangan dimasukkan kembali
 tanpa keputusan produk baru.
 
 ## 10. Fase 5 — Kepatuhan, abuse, privasi (3–4 minggu)

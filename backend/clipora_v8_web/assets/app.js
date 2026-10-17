@@ -3,13 +3,17 @@
 // explicit local demo preview is enabled. No worker, no network, no public gate.
 const views={
   video:{label:'Video Downloader',line:'Your videos.',accent:'One simple link.',description:'A simpler way to save the videos you love. Start with a link from your favorite platform.',kind:'video',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'YouTube, TikTok, Instagram, and Pinterest links.',platforms:['YouTube','TikTok','Instagram','Pinterest']},
-  photo:{label:'Photo Downloader',line:'Your photos.',accent:'One simple link.',description:'From a single photo to an entire carousel. Keep the moments you want to come back to.',kind:'images',caption:'Start with your photo post link',input:'Photo post URL',placeholder:'Paste a photo post or pin link here',help:'TikTok photo posts, Instagram posts, and Pinterest pins.',platforms:['TikTok','Instagram','Pinterest']}
+  photo:{label:'Photo Downloader',line:'Your photos.',accent:'One simple link.',description:'From a single photo to an entire carousel. Keep the moments you want to come back to.',kind:'images',caption:'Start with your photo post link',input:'Photo post URL',placeholder:'Paste a photo post or pin link here',help:'TikTok photo posts, Instagram posts, and Pinterest pins.',platforms:['TikTok','Instagram','Pinterest']},
+  // Audio is extracted from a video post, so recognition and download reuse the
+  // video media kind; only the preview flavour and the fixed format differ.
+  audio:{label:'Audio Downloader',line:'Your audio.',accent:'Keep the sound.',description:'Turn a video link into an MP3. Check the link, then download the audio on its own.',kind:'video',previewKind:'audio',format:'mp3',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'YouTube, TikTok, Instagram, and Pinterest links.',platforms:['YouTube','TikTok','Instagram','Pinterest']}
 };
 const names={youtube:'YouTube',tiktok:'TikTok',instagram:'Instagram',pinterest:'Pinterest'};
 const form=document.getElementById('downloadForm'),input=document.getElementById('url'),button=document.getElementById('check-link');
 const pasteButton=document.getElementById('paste-link');
 const result=document.getElementById('result'),resultTitle=document.getElementById('result-title'),resultDescription=document.getElementById('result-description');
 const previewCard=document.getElementById('preview-card'),previewVideo=document.getElementById('preview-video');
+const previewAudio=document.getElementById('preview-audio'),previewStage=document.getElementById('preview-stage');
 const previewImage=document.getElementById('preview-image'),previewPlaceholder=document.getElementById('preview-placeholder');
 const previewTitle=document.getElementById('preview-title'),previewCaption=document.getElementById('preview-caption');
 const previewPlatform=document.getElementById('preview-platform'),previewDuration=document.getElementById('preview-duration');
@@ -19,7 +23,7 @@ const downloadLabel=document.getElementById('download-button-label'),downloadSta
 const availabilityText=document.getElementById('availability-text'),noticeText=document.getElementById('download-notice-text');
 const links=document.querySelectorAll('.navigation [data-view]');
 let currentView=null,controller=null,revision=0,recognized=null,demoEnabled=false,downloading=false;
-const drafts={video:'',photo:''};
+const drafts={video:'',photo:'',audio:''};
 const sampleNotes={
   video:'Bundled sample: 640×360 video, 3 seconds. Not the post you pasted.',
   hd:'Bundled sample: 1280×720 video, 3 seconds. Not the post you pasted.',
@@ -33,6 +37,7 @@ const unavailableNotes={
   image:'Image downloads are not available in this build.'
 };
 function currentFormat(){
+  if(views[currentView]?.format)return views[currentView].format;
   if(views[currentView]?.kind==='images')return 'image';
   const checked=document.querySelector('input[name="download-type"]:checked');
   return checked?.value||'video';
@@ -43,8 +48,10 @@ function updateFormatNote(){
 }
 function hidePreview(){
   previewCard.hidden=true;
-  previewVideo.hidden=true;previewImage.hidden=true;previewPlaceholder.hidden=false;
-  previewVideo.removeAttribute('src');previewVideo.removeAttribute('poster');previewImage.removeAttribute('src');
+  previewVideo.hidden=true;previewAudio.hidden=true;previewImage.hidden=true;previewPlaceholder.hidden=false;
+  previewStage.classList.remove('audio-stage');
+  previewVideo.removeAttribute('src');previewVideo.removeAttribute('poster');
+  previewAudio.removeAttribute('src');previewImage.removeAttribute('src');
   previewTitle.textContent='';previewCaption.textContent='';previewPlatform.textContent='';previewDuration.textContent='';
   previewPlaceholder.textContent='Loading preview…';
 }
@@ -68,7 +75,7 @@ for(const format of ['video','hd','mp3']){
 function navigate(focus=false){
   const key=location.hash.slice(1),next=Object.hasOwn(views,key)?key:'video';
   if(currentView===next)return;
-  if(currentView==='video'||currentView==='photo')drafts[currentView]=input.value;
+  if(currentView in drafts)drafts[currentView]=input.value;
   resetCheck();
   currentView=next;const view=views[next];
   links.forEach(link=>{if(link.dataset.view===next)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
@@ -88,19 +95,23 @@ function navigate(focus=false){
   if(focus)document.getElementById('page-title').focus({preventScroll:true});
 }
 async function loadPreview(view,operation){
+  const previewKind=view.previewKind||view.kind;
   previewCard.hidden=false;
-  previewVideo.hidden=true;previewImage.hidden=true;previewPlaceholder.hidden=false;
+  previewVideo.hidden=true;previewAudio.hidden=true;previewImage.hidden=true;previewPlaceholder.hidden=false;
+  previewStage.classList.toggle('audio-stage',previewKind==='audio');
   previewPlaceholder.textContent='Loading preview…';
   previewTitle.textContent='';previewCaption.textContent='';previewPlatform.textContent='';previewDuration.textContent='';
   try{
-    const response=await fetch('/api/v8/demo/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:input.value.trim(),media_kind:view.kind}),cache:'no-store',credentials:'same-origin'});
+    const response=await fetch('/api/v8/demo/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:input.value.trim(),media_kind:previewKind}),cache:'no-store',credentials:'same-origin'});
     if(operation!==revision)return;
     let data=null;
     try{data=await response.json();}catch{data=null;}
     if(operation!==revision)return;
     if(!response.ok||!data||data.sample!==true||data.network_access_performed!==false||typeof data.preview_url!=='string'||!data.preview_url.startsWith('/api/v8/demo/preview/')||typeof data.caption!=='string'||!Object.hasOwn(names,data.platform))throw Error('preview');
     previewPlaceholder.hidden=true;
-    if(view.kind==='images'){
+    if(previewKind==='audio'){
+      previewAudio.setAttribute('src',data.preview_url);previewAudio.hidden=false;
+    }else if(view.kind==='images'){
       previewImage.setAttribute('src',data.preview_url);previewImage.hidden=false;
     }else{
       previewVideo.setAttribute('src',data.preview_url);
@@ -138,11 +149,11 @@ async function check(){
     if(!data||data.media_kind!==view.kind||!Object.hasOwn(names,data.platform)||data.public_downloads_enabled!==false||data.network_access_performed!==false)throw Error('This link could not be checked. Please try again.');
     demoEnabled=data.demo_downloads_enabled===true;
     recognized={url:input.value.trim(),kind:view.kind,platform:data.platform};
-    formatPicker.hidden=view.kind!=='video';
+    formatPicker.hidden=view.kind!=='video'||Boolean(view.format);
     updateFormatNote();
     if(demoEnabled){
       actions.hidden=false;
-      downloadLabel.textContent=view.kind==='images'?'Download sample image':'Download sample';
+      downloadLabel.textContent=view.format==='mp3'?'Download MP3':view.kind==='images'?'Download sample image':'Download sample';
       availabilityText.textContent='Demo · sample file';
       noticeText.textContent='Demo mode returns a bundled sample file. The post you pasted is never downloaded.';
       showResult(names[data.platform]+' link recognized','Preview and download options are below. Everything here comes from the bundled sample.');
@@ -211,6 +222,6 @@ downloadButton.addEventListener('click',async()=>{
 });
 window.addEventListener('hashchange',()=>navigate(true));
 document.querySelector('.skip-link').addEventListener('click',event=>{event.preventDefault();document.getElementById('main').focus();});
-window.addEventListener('pagehide',()=>{if(currentView==='video'||currentView==='photo')drafts[currentView]=input.value;controller?.abort();revision++;});
+window.addEventListener('pagehide',()=>{if(currentView in drafts)drafts[currentView]=input.value;controller?.abort();revision++;});
 window.addEventListener('pageshow',event=>{if(event.persisted){currentView=null;navigate();}});
 navigate();

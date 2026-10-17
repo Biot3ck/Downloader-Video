@@ -14,6 +14,7 @@
     <nav class="navigation" aria-label="Downloader navigation">
       <a href="#video" data-view="video" aria-current="page" aria-label="Video Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10 9 5 3-5 3Z"/></svg><span class="nav-full">Video Downloader</span><span class="nav-short" aria-hidden="true">Video</span></a>
       <a href="#photo" data-view="photo" aria-label="Photo Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg><span class="nav-full">Photo Downloader</span><span class="nav-short" aria-hidden="true">Photos</span></a>
+      <a href="#audio" data-view="audio" aria-label="Audio Downloader"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18V5l10-2v13M10 9l10-2"/><ellipse cx="6.5" cy="18" rx="3.5" ry="3"/><ellipse cx="16.5" cy="16" rx="3.5" ry="3"/></svg><span class="nav-full">Audio Downloader</span><span class="nav-short" aria-hidden="true">Audio</span></a>
     </nav>
   </header>
   <main id="main" class="layout" tabindex="-1">
@@ -32,8 +33,9 @@
         </form>
         <div id="result" class="result" role="status" aria-live="polite" aria-atomic="true" hidden><strong id="result-title"></strong><p id="result-description"></p></div>
         <div id="preview-card" class="preview-card" hidden>
-          <div class="preview-stage">
+          <div class="preview-stage" id="preview-stage">
             <video id="preview-video" class="preview-media" controls playsinline preload="metadata" hidden></video>
+            <audio id="preview-audio" class="preview-media" controls preload="metadata" hidden></audio>
             <img id="preview-image" class="preview-media" alt="Bundled sample preview" hidden>
             <p id="preview-placeholder" class="preview-placeholder">Loading preview…</p>
           </div>

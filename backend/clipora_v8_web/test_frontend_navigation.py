@@ -24,25 +24,27 @@ class FrontendNavigationTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
     def client(self,origin=ORIGIN,enabled=False):
         return TestClient(create_app(origin,Path(self.temp.name).resolve(),offline_sample_enabled=enabled),base_url=origin)
-    def test_two_feature_navigation_without_fixture_or_device_controls(self):
+    def test_three_feature_navigation_without_fixture_or_device_controls(self):
         for enabled in (False,True):
             text=self.client(enabled=enabled).get('/').text;page=Markup(text)
-            self.assertEqual(page.links,[('video','#video'),('photo','#photo')])
+            self.assertEqual(page.links,[('video','#video'),('photo','#photo'),('audio','#audio')])
             self.assertEqual(page.scripts,['/assets/app.js'])
             for value in ('Try a sample','sample-start','image-sample-gallery','type="file"','ON YOUR DEVICE','Your image gallery'):
                 self.assertNotIn(value,text)
-    def test_audio_and_history_pages_are_absent_but_mp3_format_remains(self):
+    def test_audio_page_is_live_while_history_stays_absent(self):
         text=self.client().get('/').text
-        for value in ('Audio Downloader','History','audio-view','history-view',
-                      'audio-url','nav-badge','coming soon'):
+        # Audio shares the product panel instead of a disabled placeholder.
+        self.assertIn('Audio Downloader',text)
+        self.assertIn('href="#audio"',text)
+        for value in ('History','history-view','audio-view','audio-url',
+                      'nav-badge','coming soon','Not available yet'):
             self.assertNotIn(value,text)
-        # MP3 is a download format inside the Video surface, not a separate page.
+        # MP3 is offered both as a fixed format on the Audio page and as a
+        # shortcut format inside the Video page.
         self.assertIn('id="format-mp3"',text)
-        self.assertIn('MP3',text)
         self.assertNotIn('320 kbps',text)
-        # Only video and photo links are offered.
-        self.assertIn('Video Downloader',text)
-        self.assertIn('Photo Downloader',text)
+        for label in ('Video Downloader','Photo Downloader'):
+            self.assertIn(label,text)
     def test_default_product_does_not_serve_developer_or_archived_code(self):
         client=self.client()
         for path in ('/dev','/assets/dev.js','/assets/dev.css','/tools_archive/device-preview/images.js','/os_review.py','/assets/os_review.py'):

@@ -27,7 +27,7 @@ SAMPLES = {
     'image': ('sample.jpg', 'image/jpeg'),
 }
 ALLOWED = {'video': frozenset({'video', 'hd', 'mp3'}), 'images': frozenset({'image'})}
-PREVIEW = {'video': ('video', 640, 360), 'images': ('image', 1280, 720)}
+PREVIEW = {'video': ('video', 640, 360), 'images': ('image', 1280, 720), 'audio': ('mp3', None, None)}
 PLATFORMS = frozenset(HOSTS.values())
 DISPLAY = {'youtube': 'YouTube', 'tiktok': 'TikTok', 'instagram': 'Instagram', 'pinterest': 'Pinterest'}
 CAPTION = """Demo caption · Clipora sample media
@@ -98,7 +98,8 @@ def register(app, secret=None):
             media_kind = data['media_kind']
             if media_kind not in PREVIEW:
                 raise ValueError('Choose a supported media kind.')
-            result = recognize_media(data['url'], media_kind)
+            # Audio comes out of a video post, so it is recognised as one.
+            result = recognize_media(data['url'], 'video' if media_kind == 'audio' else media_kind)
         except (ValueError, TypeError, UnicodeError) as exc:
             raise HTTPException(422, str(exc)) from None
         fmt, width, height = PREVIEW[media_kind]
@@ -106,10 +107,11 @@ def register(app, secret=None):
         return {'sample': True, 'platform': result.platform, 'media_kind': media_kind,
                 'title': f"Sample clip · {DISPLAY[result.platform]}",
                 'caption': CAPTION,
-                'duration_seconds': 3 if fmt == 'video' else None, 'width': width, 'height': height,
+                'duration_seconds': 3 if fmt in ('video', 'mp3') else None,
+                'width': width, 'height': height,
                 'preview_url': '/api/v8/demo/preview/' + issue(fmt, result.platform),
                 'poster_url': ('/api/v8/demo/preview/' + issue('image', result.platform)
-                               if fmt != 'image' else None),
+                               if fmt == 'video' else None),
                 'expires_in': TTL, 'network_access_performed': False}
 
     @app.post('/api/v8/demo/download')

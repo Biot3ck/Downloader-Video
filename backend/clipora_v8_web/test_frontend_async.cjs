@@ -9,7 +9,7 @@ function setup(){
   function element(){
     const handlers={},attrs={};
     return {hidden:true,disabled:false,value:'',textContent:'',dataset:{},
-      classList:{toggle(){}},addEventListener(name,fn){handlers[name]=fn;},
+      classList:{toggle(){},add(){},remove(){}},addEventListener(name,fn){handlers[name]=fn;},
       setAttribute(name,value){attrs[name]=value;},removeAttribute(name){delete attrs[name];},
       replaceChildren(){},append(){},focus(){},attrs,
       emit(name){return handlers[name]?.({preventDefault(){}});}};
@@ -211,6 +211,33 @@ test('paste failures and empty clipboards explain what to do instead',async()=>{
   await ui.get('paste-link').emit('click');
   assert.equal(ui.get('result-title').textContent,'That link is too long');
   assert.equal(ui.requests.length,0);
+});
+test('the audio view reuses the video contract and downloads mp3',async()=>{
+  const ui=setup();ui.navigate('audio');
+  assert.equal(ui.get('url-label').textContent,'Video URL');
+  assert.equal(ui.get('feature-label').textContent,'Audio Downloader');
+  const done=ui.submit();
+  assert.deepEqual(JSON.parse(ui.requests[0].options.body),{url:'',media_kind:'video'});
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  // A fixed MP3 format means no picker and no photo-style image format.
+  assert.equal(ui.get('video-formats').hidden,true);
+  assert.equal(ui.get('download-button-label').textContent,'Download MP3');
+  assert.deepEqual(JSON.parse(ui.requests[1].options.body),{url:'',media_kind:'audio'});
+  respond(ui.requests[1],{...previewPayload,media_kind:'audio',duration_seconds:3,
+    width:null,height:null,poster_url:null});await tick();
+  assert.equal(ui.get('preview-audio').attrs.src,'/api/v8/demo/preview/token');
+  assert.equal(ui.get('preview-audio').hidden,false);
+  assert.equal(ui.get('preview-video').hidden,true);
+  assert.equal(ui.get('preview-duration').textContent,'3s');
+  const ready=ui.get('download-file').emit('click');
+  assert.deepEqual(JSON.parse(ui.requests[2].options.body),{url:'',media_kind:'video',format:'mp3'});
+  ui.requests[2].resolve({ok:true,status:200,json:async()=>({sample:true,format:'mp3',platform:'youtube',
+    filename:'clipora-sample-youtube-mp3.mp3',url:'/api/v8/demo/file/token',network_access_performed:false})});
+  await ready;
+  assert.ok(ui.get('download-status').textContent.includes('clipora-sample-youtube-mp3.mp3'));
+  // Leaving the view clears the audio preview source.
+  ui.navigate('photo');
+  assert.equal(ui.get('preview-audio').attrs.src,undefined);
 });
 test('a demo response that is not a bundled sample is rejected',async()=>{
   const ui=setup(),done=ui.submit();

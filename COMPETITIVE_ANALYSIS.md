@@ -139,8 +139,9 @@ Berdasarkan apa yang paling dicari di pasar:
 
 Tanpa nomor 2 dan 3, Anda kalah di fitur yang paling sering dicari untuk TikTok.
 
-> **Keputusan 17 Oktober 2026:** MP3 dipertahankan sebagai format di halaman Video, bukan
-> halaman Audio terpisah. Halaman Audio dan History diputuskan keluar dari scope.
+> **Keputusan 17 Oktober 2026:** MP3 tersedia di dua tempat — sebagai format di halaman Video
+> dan sebagai halaman **Audio Downloader** sendiri (di samping Photo). Menu History tetap
+> diputuskan keluar dari scope. Belum ada konversi FFmpeg nyata; MP3 masih berupa file sampel.
 
 ### 7.3 Roadmap butuh alur kerja distribusi yang sekarang tidak ada
 

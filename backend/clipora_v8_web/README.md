@@ -1,14 +1,14 @@
 # Clipora v8 — surface produk web
 
-Clipora adalah antarmuka downloader untuk video dan foto dari YouTube, TikTok, Instagram dan
-Pinterest. **Unduhan publik sengaja dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan
+Clipora adalah antarmuka downloader untuk video, foto, dan audio (MP3) dari YouTube, TikTok,
+Instagram dan Pinterest. **Unduhan publik sengaja dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan
 link dan pemeriksaan platform; tidak ada ekstraksi, konversi, iklan, atau penulisan file media.
 
 | Surface | Status |
 | --- | --- |
 | `POST /api/v8/download` | Selalu `503` (gate publik tertutup) |
 | `/api/v8/validate` | Aktif — hanya mengenali platform |
-| Video & Photo Downloader | Aktif sampai tahap pemeriksaan link |
+| Video, Photo & Audio Downloader | Aktif sampai tahap pemeriksaan link |
 | Mode demo (`--demo-downloads`) | Opsional — preview dan file contoh lokal, bukan isi post |
 | `/healthz` | `ready_for_public_launch: false` |
 

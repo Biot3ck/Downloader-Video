@@ -10,7 +10,7 @@ berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 | --- | --- |
 | Siap unduhan publik? | **Tidak.** Gate `503`, `ready_for_public_launch: false` |
 | Siap demo internal? | **Ya**, dengan state privat dan hanya loopback |
-| Fitur aktif | Pengenalan link Video & Photo; format Video, Video HD, MP3 |
+| Fitur aktif | Pengenalan link Video, Photo & Audio; format Video, Video HD, MP3 |
 | Fitur belum ada | Ekstraksi/konversi media |
 | Bloker publik terbuka | 6 (butuh host staging Linux terpisah) |
 
@@ -20,7 +20,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 
 | Paket | Jumlah | Perintah |
 | --- | ---: | --- |
-| `clipora_v8_web` | 94 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
+| `clipora_v8_web` | 95 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
 | `clipora_v8_formats_lab` | 8 | idem, ganti direktori |
 | `clipora_v8_firewall_candidate` | 46 | idem |
 | `clipora_v8_verified_tls` | 35 | idem |
@@ -29,8 +29,8 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
 | `clipora_v8_spike` | 17 | idem (fungsi murni; tanpa jaringan) |
-| JavaScript frontend | 15 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **271** | |
+| JavaScript frontend | 16 | `node clipora_v8_web/test_frontend_async.cjs` |
+| **Total** | **273** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
@@ -57,13 +57,16 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
 1. **Image web mewarisi image worker.** `clipora-worker:v8-dns` membawa FFmpeg, yt-dlp dan
    library codec; web tier tidak membutuhkannya. Pemisahan ke runtime Python minimal adalah
    perubahan terpisah yang harus diaudit ulang. Pin ada di `base_image.lock`.
-2. **Audio Downloader dan History dihapus dari surface.** Halaman Audio terpisah dan menu
-   History tidak lagi ada di markup, JavaScript, maupun route demo. MP3 **tetap ada** sebagai
-   pilihan format di dalam halaman Video. Permintaan ke `/api/v8/audio` dan `/api/v8/history`
-   mengembalikan `404`.
+2. **History dihapus dari surface; Audio sekarang nyata.** Menu History tidak ada di markup,
+   JavaScript, maupun route demo (`/api/v8/history` → `404`). Halaman Audio Downloader sudah
+   aktif: input URL video, preview pemutar audio, dan tombol **Download MP3**. Audio memakai
+   kontrak pengenalan yang sama dengan video (`media_kind=video`), dengan `media_kind=audio`
+   hanya pada endpoint preview demo. Format MP3 juga masih tersedia sebagai pilihan di halaman
+   Video. Belum ada endpoint `/api/v8/audio` terpisah — sengaja, karena ekstraksi audio adalah
+   turunan dari post video.
 3. **Kandidat format video/MP3 belum terintegrasi.** `clipora_v8_formats_lab` tidak diimpor
    aplikasi, tidak disajikan HTTP, dan tidak masuk image. MP3 yang tampil di UI masih berupa
-   preferensi dan file sampel, bukan konversi nyata.
+   preferensi dan file sampel, bukan konversi FFmpeg nyata.
 4. **Kode arsip Tools** (`tools_archive/device-preview`) disimpan sebagai referensi, tidak
    dimuat produk, dan diuji mengembalikan `404`.
 5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan empat file sampel di

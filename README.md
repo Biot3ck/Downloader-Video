@@ -1,7 +1,7 @@
 # Clipora
 
-Clipora adalah aplikasi web untuk mengunduh video dan foto dari YouTube, TikTok, Instagram dan
-Pinterest. Repositori ini berisi surface produk web beserta paket pendukung untuk queue, ownership,
+Clipora adalah aplikasi web untuk mengunduh video, foto, dan audio MP3 dari YouTube, TikTok,
+Instagram dan Pinterest. Repositori ini berisi surface produk web beserta paket pendukung untuk queue, ownership,
 egress, TLS dan audit paket OS.
 
 > **Status: demo internal.** Unduhan publik dinonaktifkan (`503`) dan `/healthz` melaporkan

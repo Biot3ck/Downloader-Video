@@ -81,9 +81,24 @@ class DemoDownloadTests(unittest.TestCase):
         self.assertEqual(served.headers['content-type'], 'image/jpeg')
         self.assertIn('inline', served.headers['content-disposition'])
 
+    def test_audio_preview_uses_the_bundled_mp3_and_no_poster(self):
+        client = self.client()
+        data = self.preview(client, kind='audio').json()
+        self.assertEqual(data['media_kind'], 'audio')
+        self.assertEqual(data['platform'], 'tiktok')
+        self.assertEqual(data['duration_seconds'], 3)
+        self.assertIsNone(data['width'])
+        self.assertIsNone(data['poster_url'])
+        served = client.get(data['preview_url'])
+        self.assertEqual(served.status_code, 200)
+        self.assertEqual(served.headers['content-type'], 'audio/mpeg')
+        self.assertIn('inline', served.headers['content-disposition'])
+        self.assertGreater(len(served.content), 1024)
+
     def test_preview_rejects_unknown_kinds_and_unrecognized_links(self):
         client = self.client()
-        self.assertEqual(self.preview(client, kind='audio').status_code, 422)  # no audio surface
+        for kind in ('photo', 'photos', 'mp3', ''):
+            self.assertEqual(self.preview(client, kind=kind).status_code, 422, kind)
         for url in ('https://evil.example/a', 'javascript:alert(1)'):
             self.assertEqual(self.preview(client, url=url).status_code, 422, url)
 

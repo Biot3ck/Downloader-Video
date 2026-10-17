@@ -99,7 +99,7 @@ print(job['job_id'])
             status,body,headers=http(path+'/file',headers={'Cookie':session_cookie,'Range':'bytes=4-7'})
             assert status==206 and body=='ftyp'
         status,body,_=http('/')
-        assert status==200 and 'Photo Downloader' in body and 'Audio Downloader' not in body and 'History' not in body
+        assert status==200 and all(label in body for label in ('Photo Downloader','Audio Downloader')) and 'History' not in body
         assert 'sample-start' not in body and 'type="file"' not in body
         source_probe="from pathlib import Path;r=Path('/srv/clipora_v8_web');assert all(not (r/p).exists() for p in ('dev.html','assets/dev.js','assets/dev.css','tools_archive'))"
         docker(['exec',name,'python','-B','-c',source_probe])
