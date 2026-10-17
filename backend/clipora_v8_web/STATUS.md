@@ -85,5 +85,6 @@ Python juga membawa salinan `expat` sendiri (2.8.5) yang perlu ditinjau terpisah
 ## Jalan berikutnya
 
 Urutan yang masuk akal: siapkan host staging Linux → tutup enam bloker di atas → audit ulang
-image → baru pertimbangkan gate publik. Rencana milestone historis ada di
+image → baru pertimbangkan gate publik. Rencana lengkap per fase, estimasi waktu, biaya dan
+kriteria keluar ada di [ROADMAP.md](../../ROADMAP.md). Rencana milestone historis ada di
 [docs/MVP_READINESS.md](docs/MVP_READINESS.md).

@@ -7,6 +7,8 @@ egress, TLS dan audit paket OS.
 > **Status: demo internal.** Unduhan publik dinonaktifkan (`503`) dan `/healthz` melaporkan
 > `ready_for_public_launch: false`. Enam bloker persetujuan publik belum dapat ditutup tanpa host
 > staging Linux terpisah. Rincian ada di [STATUS.md](backend/clipora_v8_web/STATUS.md).
+>
+> Rencana menuju produk publik ada di [ROADMAP.md](ROADMAP.md).
 
 ## Isi repositori
 
