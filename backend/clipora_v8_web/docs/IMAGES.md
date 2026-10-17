@@ -1,3 +1,5 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Mode gambar dan album Clipora
 
 Mode Images / album mengenali link HTTPS TikTok, Instagram, dan Pinterest tanpa menghubungi platform. Request tanpa media_kind tetap mode video; URL publik tidak dimasukkan ke scheduler lokal. Pengambilan konten platform/extractor publik tetap belum tersedia, dan endpoint download tetap 503.

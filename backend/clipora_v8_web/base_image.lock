@@ -1,0 +1,14 @@
+# Pinned local base image for the web staging image.
+#
+# The web image currently inherits the worker image, so FFmpeg, yt-dlp and the
+# codec libraries are present in the web tier as well. That inheritance is a
+# known deviation, recorded in OS_PACKAGE_REVIEW.md; it is not a requirement of
+# the web surface. Replacing it with a minimal Python runtime is a separate,
+# separately audited change.
+#
+# Verify before rebuilding:
+#   docker image inspect clipora-worker:v8-dns --format '{{.Id}}'
+#
+# Any mismatch means the local base changed and must be reviewed first.
+image=clipora-worker:v8-dns
+id=sha256:c0e3e82ca62c54eadf25137f4bc520bce1e42a73760a6655aa67c168b7f18432

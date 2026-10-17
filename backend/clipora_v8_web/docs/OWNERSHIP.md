@@ -1,3 +1,5 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Kandidat kepemilikan job dan file
 
 Modul baru ini memakai JobStore durable yang sudah ada, dengan state terpisah di subfolder owned-public. Tidak mengubah JobStore offline lama. Field owner pada tabel jobs tetap execution fence; browser_sessions/job_ownership menyimpan otorisasi browser secara terpisah.

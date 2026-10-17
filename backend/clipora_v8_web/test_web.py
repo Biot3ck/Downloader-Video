@@ -60,8 +60,20 @@ class WebTests(unittest.TestCase):
             with self.subTest(url=url),self.assertRaises(ValueError):recognize(url)
     def test_origin_configuration(self):
         for origin in ('http://example.com','https://example.com/','https://*.example.com',
-                       'https://user@example.com','https://example.com?x=1'):
+                       'https://user@example.com','https://example.com?x=1',
+                       'http://127.0.0.1:0','https://example.com:0','https://example.com:99999',
+                       'https://example.com:abc'):
             with self.assertRaises(ValueError):validate_origin(origin)
+        self.assertEqual(validate_origin('https://example.com:8443').port,8443)
+        self.assertIsNone(validate_origin('https://example.com').port)
+    def test_cross_origin_isolation_headers(self):
+        response=self.client.get('/')
+        self.assertEqual(response.headers['cross-origin-opener-policy'],'same-origin')
+        self.assertEqual(response.headers['cross-origin-resource-policy'],'same-origin')
+    def test_module_import_does_not_build_an_app(self):
+        import clipora_v8_web.main as main_module
+        self.assertFalse(hasattr(main_module,'app'))
+        self.assertTrue(callable(main_module.app_factory))
 
 
 class StreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
@@ -83,6 +95,18 @@ class StreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         sent.clear();scope['headers'].append((b'host',b'127.0.0.1:8090'))
         await boundary(scope,receive,send)
         self.assertEqual(sent[0]['status'],400)
+    async def test_websocket_is_closed_not_proxied(self):
+        called=False
+        async def downstream(scope,receive,send):
+            nonlocal called
+            called=True
+        boundary=Boundary(downstream,ORIGIN)
+        sent=[]
+        async def receive():return {'type':'websocket.connect'}
+        async def send(message):sent.append(message)
+        await boundary({'type':'websocket','headers':[]},receive,send)
+        self.assertFalse(called)
+        self.assertEqual(sent,[{'type':'websocket.close','code':1008}])
 
 
 if __name__=='__main__':unittest.main()

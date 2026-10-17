@@ -3,7 +3,6 @@
 Not installed on public routes; no worker, network, or Docker access. The queue's
 owner field remains an execution fence. Browser ownership is a separate table.
 """
-from contextlib import contextmanager
 import hashlib
 import hmac
 import os
@@ -11,7 +10,6 @@ from pathlib import Path
 import re
 import secrets
 import time
-from uuid import uuid4
 
 from clipora_v8_browser_real_mp4.job_store import JobStore, QueueFull
 from .platforms import recognize
@@ -56,12 +54,9 @@ class OwnedJobs(JobStore):
             ''')
             db.execute('INSERT OR IGNORE INTO ownership_meta VALUES(1,?)',(secrets.token_bytes(32),))
 
-    @contextmanager
-    def connection(self):
-        with super().connection() as db:
-            db.execute('PRAGMA foreign_keys=ON')
-            db.execute('PRAGMA max_page_count=1024')
-            yield db
+    def _configure_connection(self,db):
+        db.execute('PRAGMA foreign_keys=ON')
+        db.execute('PRAGMA max_page_count=1024')
 
     def _identity(self,db,token):
         if type(token) is not str or re.fullmatch('[0-9a-f]{64}',token) is None:
@@ -124,13 +119,9 @@ class OwnedJobs(JobStore):
                     raise IdempotencyConflict('Idempotency key already used for another request')
                 job_id=existing['job_id']
             else:
-                pending=db.execute("SELECT count(*) FROM jobs WHERE status IN ('queued','processing')").fetchone()[0]
-                total=db.execute('SELECT count(*) FROM jobs').fetchone()[0]
                 own=db.execute("SELECT 1 FROM jobs j JOIN job_ownership o USING(job_id) WHERE o.identity=? AND j.status IN ('queued','processing')",(identity,)).fetchone()
-                if own or pending>=self.max_pending or total>=self.max_records:raise QueueFull('Job capacity reached')
-                job_id=uuid4().hex
-                db.execute('INSERT INTO jobs VALUES(?,?,?,?,?,?,?)',
-                    (job_id,uuid4().hex[:10],'queued',None,now,now,'Waiting for Worker'))
+                if own:raise QueueFull('Job capacity reached')
+                job_id=self._admit(db,now,'Waiting for Worker','Job capacity reached')
                 db.execute('INSERT INTO job_ownership VALUES(?,?,?,?,?,?)',
                     (job_id,identity,idempotency,digest,normalized,now+3600))
         return self.get_owned(token,job_id)

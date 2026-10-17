@@ -1,3 +1,5 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Pembatalan berjalan dan publikasi dengan execution fence
 
 17 Oktober 2026. Perubahan hanya pada kandidat OwnedJobs/API, publisher/observer, dan harness offline; queue/runner v7 dan offline lama tidak diubah.

@@ -17,6 +17,7 @@ BASE = Path(__file__).resolve().parent
 CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; connect-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'"
 HEADERS = {'Content-Security-Policy': CSP, 'X-Content-Type-Options': 'nosniff',
            'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
+           'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Resource-Policy': 'same-origin',
            'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Cache-Control': 'no-store'}
 
 
@@ -28,7 +29,10 @@ def validate_origin(value):
         raise ValueError('Configure one exact canonical origin without a path')
     if p.scheme == 'http' and p.hostname not in ('127.0.0.1', 'localhost', '::1'):
         raise ValueError('Non-loopback origins require HTTPS')
-    _ = p.port
+    # Accessing .port rejects non-numeric values; the explicit range check also
+    # rejects port 0, which urlsplit accepts.
+    if p.port is not None and not 1 <= p.port <= 65535:
+        raise ValueError('Origin port must be between 1 and 65535')
     return p
 
 
@@ -38,6 +42,11 @@ class Boundary:
         self.authority = validate_origin(origin).netloc
 
     async def __call__(self, scope, receive, send):
+        if scope['type'] == 'websocket':
+            # No websocket route exists. Close instead of bypassing the Host and
+            # Origin checks that only apply to HTTP.
+            await send({'type': 'websocket.close', 'code': 1008})
+            return
         if scope['type'] != 'http':
             return await self.app(scope, receive, send)
         async def secured(message):
@@ -149,4 +158,7 @@ def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample
     return app
 
 
-app = create_app(os.environ.get('CLIPORA_WEB_ORIGIN', 'http://127.0.0.1:8090'), os.environ.get('CLIPORA_WEB_STATE'))
+def app_factory():
+    """Uvicorn entrypoint. Reading the environment happens on call, not on import."""
+    return create_app(os.environ.get('CLIPORA_WEB_ORIGIN', 'http://127.0.0.1:8090'),
+                      os.environ.get('CLIPORA_WEB_STATE'))

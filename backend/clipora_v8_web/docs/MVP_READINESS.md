@@ -1,3 +1,5 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Rencana release Clipora MVP
 
 Status review terbaru: [RELEASE_SECURITY.md](RELEASE_SECURITY.md). Pemeriksaan lokal dan hardening storage admission sudah dilakukan; keamanan publik belum disetujui. Linux staging terpisah belum tersedia, VM tetap tidak dipasang, unduhan publik tetap nonaktif. Bagian milestone di bawah adalah riwayat perkembangan; UI produk saat ini memakai empat menu tanpa file picker/sampel, dengan preferensi Video/HD/MP3 yang belum aktif.

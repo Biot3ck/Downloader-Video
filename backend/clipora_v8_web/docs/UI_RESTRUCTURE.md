@@ -1,8 +1,10 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Clipora — restrukturisasi UI/UX
 
 ## Audit dan checkpoint
 
-Frontend preview aktif berada pada paket ini: index.html, assets/app.js dan assets/style.css. FastAPI main.py menyediakan UI, config, pengenalan URL dan gate download 503. Launcher --offline-workflow menambahkan queue/ownership/worker sampel lokal yang sudah ada; tidak mengaktifkan internet. Desain rujukan ../clipora_v8_fastapi_mvp/product_v8.html mempunyai identitas ungu #6255ea, latar #f8f9fd, wordmark clipora. dan font Inter/system. Identitas tersebut dipertahankan.
+Frontend preview aktif berada pada paket ini: index.html, assets/app.js dan assets/style.css. FastAPI main.py menyediakan UI, config, pengenalan URL dan gate download 503. Launcher --offline-workflow menambahkan queue/ownership/worker sampel lokal yang sudah ada; tidak mengaktifkan internet. Desain rujukan `design/product_v8.html` (arsip read-only, tidak disajikan HTTP dan tidak masuk image) mempunyai identitas ungu #6255ea, latar #f8f9fd, wordmark clipora. dan font Inter/system. Identitas tersebut dipertahankan.
 
 Proyek sebelumnya tidak mempunyai repositori Git. Checkpoint lokal d6593fc dibuat sebelum perubahan, hanya pada folder clipora_v8_web, dengan branch checkpoint/pre-ui-restructure. Implementasi memakai branch feat/frontend-navigation. Repo ini sengaja tidak mencakup v7, runtime state, cookie/database, .env atau seluruh Desktop. Tidak ada push/PR/deployment.
 

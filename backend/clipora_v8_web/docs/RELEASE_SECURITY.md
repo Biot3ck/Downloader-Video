@@ -1,3 +1,5 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Review keamanan publik — 17 Oktober 2026
 
 **Keputusan: BELUM DISETUJUI untuk unduhan publik atau deployment.** Public gate tetap false/503. Pemilik mengonfirmasi belum ada Linux staging terpisah dan memilih pemeriksaan lokal; tidak ada VM/software baru, VPS atau konfigurasi host yang dipasang/diubah.

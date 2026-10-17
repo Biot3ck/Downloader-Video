@@ -1,37 +1,88 @@
-# Clipora v8 — frontend produk
+# Clipora v8 — surface produk web
 
-Frontend memakai HTML/CSS/JavaScript dan FastAPI yang sudah ada. Identitas Clipora ungu/terang dipertahankan; navigasi menyediakan Video Downloader, Photo Downloader, Audio Downloader dan History. Video/foto memakai pengenalan URL yang ada. Audio dan History belum tersedia dan ditampilkan dengan jujur. Tidak ada hasil unduhan palsu atau unduhan platform publik yang diaktifkan.
+Clipora adalah antarmuka downloader untuk video dan foto dari YouTube, TikTok, Instagram dan
+Pinterest. **Unduhan publik sengaja dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan
+link dan pemeriksaan platform; tidak ada ekstraksi, konversi, iklan, atau penulisan file media.
 
-Lihat [UI_RESTRUCTURE.md](UI_RESTRUCTURE.md) untuk audit, branch/checkpoint, file yang berubah, pengujian responsif dan keterbatasan.
+| Surface | Status |
+| --- | --- |
+| `POST /api/v8/download` | Selalu `503` (gate publik tertutup) |
+| `/api/v8/validate` | Aktif — hanya mengenali platform |
+| Video & Photo Downloader | Aktif sampai tahap pemeriksaan link |
+| Audio Downloader & History | Belum tersedia, ditandai `Soon` di navigasi |
+| `/healthz` | `ready_for_public_launch: false` |
 
-Halaman Video juga menyediakan preferensi Video, Video HD dan MP3 dengan status belum tersedia. Check link tetap hanya mengenali platform; tidak memulai download/konversi atau iklan. Rancangan kualitas asli dan rewarded ads ada di [VIDEO_FORMATS.md](VIDEO_FORMATS.md).
+Status lengkap, angka tes, dan blocker ada di [STATUS.md](STATUS.md). Keputusan desain dan batas
+kepercayaan ada di [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Preview lokal
+## Menjalankan lokal
 
-Dari backend:
+Dari direktori `backend`:
 
 ```sh
 .venv/bin/python -B clipora_v8_web/run_local.py --port 8090
 ```
 
-Produk tersedia pada http://127.0.0.1:8090. Untuk utilitas developer offline gunakan --offline-workflow dan --state /absolute/private/state; buka /dev secara langsung. Halaman utama tetap bersih dari semua fixture. /dev hanya tersedia pada mode offline eksplisit + HTTP loopback, tidak pada default atau HTTPS. Halaman developer memakai API job/ownership yang sudah ada.
+Buka <http://127.0.0.1:8090>. Launcher selalu mengikat `127.0.0.1`, tidak mempercayai forwarded
+header, dan tidak menulis access log request.
 
-Kode preview file perangkat untuk calon Tools disimpan pada tools_archive/device-preview dan tidak disajikan HTTP. Tidak ada input file pada halaman produk.
+Untuk utilitas developer (job queue, ownership, worker sampel lokal):
+
+```sh
+.venv/bin/python -B clipora_v8_web/run_local.py --port 8090 \
+  --offline-workflow --state /absolute/private/state
+```
+
+`/dev` hanya tersedia pada mode itu dan hanya lewat HTTP loopback. Halaman produk tidak pernah
+memuat fixture, dan `--offline-workflow` tidak mengaktifkan internet.
+
+## Menjalankan tes
+
+Dari direktori `backend`:
+
+```sh
+.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q
+node clipora_v8_web/test_frontend_async.cjs
+```
+
+Paket lain diuji dengan pola yang sama (`clipora_v8_firewall_candidate`,
+`clipora_v8_verified_tls`, `clipora_v8_secure_egress_stage`, `clipora_v8_image_backend`,
+`clipora_v8_local_workflow`, `clipora_v8_staging_linux`, `clipora_v8_formats_lab`).
+
+## Struktur
+
+```
+backend/
+  clipora_v8_web/              surface produk: ASGI boundary, API, UI, limiter
+  clipora_v8_browser_real_mp4/ queue durable dan pengiriman artifact
+  clipora_v8_local_workflow/   launcher alur offline (sampel lokal)
+  clipora_v8_image_backend/    pipeline gambar offline
+  clipora_v8_verified_tls/     fixture TLS/worker terverifikasi
+  clipora_v8_secure_egress_stage/ stage egress dan parser HTTP
+  clipora_v8_firewall_candidate/ kandidat three-tier kernel/mTLS
+  clipora_v8_staging_linux/    preflight host Linux
+  clipora_v8_formats_lab/      kandidat kebijakan format (tidak diimpor produk)
+```
+
+## Dokumentasi
+
+- [STATUS.md](STATUS.md) — kondisi terkini, tes, blocker, deviasi yang diketahui
+- [ARCHITECTURE.md](ARCHITECTURE.md) — komponen, alur data, batas kepercayaan
+- [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md) — review keamanan dan blocker publik
+- [docs/OWNERSHIP.md](docs/OWNERSHIP.md) — kontrak ownership, sesi, idempotensi
+- [docs/CANCELLATION.md](docs/CANCELLATION.md) — pembatalan dan fencing worker
+- [docs/IMAGES.md](docs/IMAGES.md) — pipeline gambar offline
+- [docs/OS_PACKAGE_REVIEW.md](docs/OS_PACKAGE_REVIEW.md) — review paket OS dan patch tertunda
+- [docs/UI_RESTRUCTURE.md](docs/UI_RESTRUCTURE.md) — catatan restrukturisasi UI
+- [docs/VIDEO_FORMATS.md](docs/VIDEO_FORMATS.md) — kandidat kualitas video/MP3
+- [docs/MVP_READINESS.md](docs/MVP_READINESS.md) — riwayat milestone dan rencana
 
 ## Batas keamanan
 
-Hasil pemeriksaan dan blocker persetujuan publik terbaru: [RELEASE_SECURITY.md](RELEASE_SECURITY.md). State limiter wajib path kanonis tanpa symlink, direktori milik UID proses 0700 dan database regular privat 0600; konfigurasi yang tidak aman ditolak tanpa diperbaiki otomatis. Launcher lokal sudah memakai path kanonis.
+Origin dikonfigurasi sebagai satu nilai persis; Host dan Origin setiap request harus cocok
+dengannya. Body POST dibatasi 4096 byte dengan deadline, CSP tanpa `unsafe-inline`/CDN dipasang
+di lapisan ASGI, dan limiter memakai hash HMAC atas IP klien. State harus berupa path kanonis
+tanpa symlink, direktori milik UID proses dengan mode `0700`, dan database `0600`.
 
-[Review paket OS dan rencana staging/patch](OS_PACKAGE_REVIEW.md) mencatat pembaruan Expat/JPEG XL/XZ yang diperlukan, library bundled Python dan alat audit readonly. Belum ada patch runtime, VM atau aktivasi unduhan publik.
-
-Host/Origin persis, POST 4096 byte/deadline 5 detik, CSP origin sendiri, tanpa unsafe-inline/CDN, limiter SQLite, ownership cookie dan retensi tetap berlaku. POST /api/v8/download tetap 503; validasi hostname bukan bukti extractor. UI tidak menyimpan URL draft secara permanen atau menciptakan API audio/history.
-
-Launcher selalu 127.0.0.1, tanpa trust forwarded headers dan tanpa access log request. --offline-workflow memberi akses Docker hanya untuk fixture lokal yang ditentukan kode. Bukan launcher deployment produksi.
-
-## Docker dan verifikasi
-
-Image web dibangun offline dari base lokal terverifikasi dan wheel dengan SHA-256 terpin, melalui build_image.py /absolute/wheelhouse. Daftar file eksplisit mengecualikan developer HTML/JS/CSS, arsip Tools, router legacy dan Docker client. staging.compose.yaml hanya network internal tanpa published port, runtime readonly/non-root/cap-drop ALL/NoNewPrivs dengan state tmpfs.
-
-run_staging_test.py memeriksa entrypoint default; main(owned=True) memeriksa surface ownership. State tmpfs/limiter bukan kuota total host atau penyimpanan produksi. Dependensi/OS minimal, ingress TLS, filesystem quota, load/recovery dan sign-off masih diperlukan. Jangan menyimpulkan readiness publik dari tes fixture.
-
-Kontrak ownership: [OWNERSHIP.md](OWNERSHIP.md). Backend gambar: [IMAGES.md](IMAGES.md). Roadmap: [MVP_READINESS.md](MVP_READINESS.md).
+Ini bukan klaim siap produksi. Enam blocker pada [STATUS.md](STATUS.md) belum dapat ditutup tanpa
+host staging Linux terpisah.

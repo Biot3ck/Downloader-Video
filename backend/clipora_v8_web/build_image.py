@@ -12,16 +12,35 @@ import sys
 import tempfile
 
 HERE=Path(__file__).resolve().parent
-EXPECTED_BASE='sha256:c0e3e82ca62c54eadf25137f4bc520bce1e42a73760a6655aa67c168b7f18432'
 FILES=('main.py','platforms.py','rate_limit.py','owned_jobs.py','owned_runner.py','owned_publish.py','owned_artifacts.py','owned_api.py','owned_entry.py','index.html','assets/app.js','assets/style.css')
+
+
+def base_image():
+    """Read the single source of truth for the pinned base image."""
+    values={}
+    for line in (HERE/'base_image.lock').read_text().splitlines():
+        line=line.split('#',1)[0].strip()
+        if not line:continue
+        key,_,value=line.partition('=')
+        values[key.strip()]=value.strip()
+    if set(values)!={'image','id'}:raise ValueError('Unexpected base_image.lock keys')
+    if not re.fullmatch(r'[a-z0-9][a-z0-9._/-]*(:[A-Za-z0-9._-]+)?',values['image']):
+        raise ValueError('Invalid pinned base image reference')
+    if not re.fullmatch(r'sha256:[a-f0-9]{64}',values['id']):
+        raise ValueError('Invalid pinned base image id')
+    return values['image'],values['id']
 
 
 def main():
     if len(sys.argv)!=2:raise SystemExit('Usage: build_image.py /absolute/wheelhouse')
     wheelhouse=Path(sys.argv[1])
-    result=subprocess.run(['docker','image','inspect','clipora-worker:v8-dns','--format','{{.Id}}'],
+    image,expected=base_image()
+    result=subprocess.run(['docker','image','inspect',image,'--format','{{.Id}}'],
                           capture_output=True,text=True,check=True,timeout=15)
-    if result.stdout.strip()!=EXPECTED_BASE:raise RuntimeError('Local base image changed; review it before building')
+    if result.stdout.strip()!=expected:raise RuntimeError('Local base image changed; review it before building')
+    from_lines=[line.split(None,1)[1].strip() for line in (HERE/'Dockerfile').read_text().splitlines()
+                if line.upper().startswith('FROM ')]
+    if from_lines!=[image]:raise RuntimeError('Dockerfile FROM does not match base_image.lock')
     with tempfile.TemporaryDirectory(prefix='clipora-web-build-') as tmp:
         root=Path(tmp);(root/'wheels').mkdir()
         for line in (HERE/'requirements-web.lock').read_text().splitlines():

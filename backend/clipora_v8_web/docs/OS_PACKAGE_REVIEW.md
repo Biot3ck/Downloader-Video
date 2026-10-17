@@ -1,10 +1,12 @@
+> Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+
 # Review paket OS dan persiapan Linux staging — 17 Oktober 2026
 
 Review pencocokan versi OS sudah dijalankan. **Hasil: perlu patch dan triage lanjutan; belum disetujui untuk publik.** Pemilik kembali memilih tanpa VM. Tidak memasang paket/VM, mengubah Docker context, memodifikasi container/image aktif, menyentuh VPS atau membuka egress downloader.
 
 ## Target dan metode
 
-Target persis: image lokal `sha256:4ca92458f098893504d317d7f1c2301ccbaa81fc1cb4fce5edb0a1f0a5dc3944`, Debian 13/trixie, aarch64. Ada 289 binary package terpasang dari 207 pasangan source/version. Image web saat ini mewarisi image worker sehingga ikut membawa FFmpeg dan banyak library codec; pengurangan image web menjadi runtime API minimal perlu dilakukan pada kandidat terpisah.
+Target persis: image web staging `clipora-web:v8-staging` yang dibangun dari base terpin di [base_image.lock](../base_image.lock), Debian 13/trixie, aarch64. ID image hasil build berubah setiap rebuild, jadi selalu ambil ID aktual dengan `docker image inspect clipora-web:v8-staging --format '{{.Id}}'` alih-alih mengutip angka dari dokumen ini. Ada 289 binary package terpasang dari 207 pasangan source/version. Image web saat ini mewarisi image worker sehingga ikut membawa FFmpeg dan banyak library codec; pengurangan image web menjadi runtime API minimal perlu dilakukan pada kandidat terpisah.
 
 Data binary/source/version/status dibaca dengan dpkg-query dalam container disposable readonly, network none, non-root, cap-drop ALL/no-new-privileges, CPU/memori/PID terbatas. Source version dibandingkan memakai dpkg --compare-versions, bukan pembandingan string atau versi upstream saja. Ini mempertimbangkan epoch, revisi Debian dan backport. [Dokumentasi dpkg-query](https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html), [penjelasan backport Debian](https://www.debian.org/security/faq#oldversion).
 
@@ -45,7 +47,7 @@ Dari backend, memakai snapshot dan image yang sudah ditinjau:
 
 ```sh
 .venv/bin/python -B clipora_v8_web/os_review.py \
-  --image-id sha256:4ca92458f098893504d317d7f1c2301ccbaa81fc1cb4fce5edb0a1f0a5dc3944 \
+  --image-id "$(docker image inspect clipora-web:v8-staging --format '{{.Id}}')" \
   --tracker /absolute/cache/debian-tracker.json \
   --tracker-sha256 9afcba95f725531a267de8d894a8aabb67b435358f2eb2bfa3fade2e5af17bce \
   --report /absolute/new/os-review.json

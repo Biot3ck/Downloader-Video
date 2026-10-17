@@ -38,6 +38,11 @@ class FrontendNavigationTests(unittest.TestCase):
         self.assertIn("History isn't available yet",text)
         self.assertIn('MP3',text)  # Preference in Video; extraction remains disabled.
         self.assertNotIn('320 kbps',text)
+        # Unavailable destinations are labelled in the navigation itself, not
+        # only after the user has already navigated into a dead end.
+        self.assertEqual(text.count('class="nav-badge"'),2)
+        self.assertIn('Audio Downloader (coming soon)',text)
+        self.assertIn('History (coming soon)',text)
     def test_default_product_does_not_serve_developer_or_archived_code(self):
         client=self.client()
         for path in ('/dev','/assets/dev.js','/assets/dev.css','/tools_archive/device-preview/images.js','/os_review.py','/assets/os_review.py'):

@@ -18,11 +18,11 @@ def main():
     os.environ['CLIPORA_WEB_ORIGIN']=f'http://127.0.0.1:{args.port}'
     os.environ['CLIPORA_WEB_STATE']=str(args.state.resolve())
     import uvicorn
-    target='clipora_v8_web.main:app'
+    target='clipora_v8_web.main:app_factory';factory=True
     if args.offline_workflow:
         from clipora_v8_local_workflow.app import create_local_app
-        target=create_local_app(os.environ['CLIPORA_WEB_ORIGIN'],args.state.resolve())
-    uvicorn.run(target,host='127.0.0.1',port=args.port,
+        target=create_local_app(os.environ['CLIPORA_WEB_ORIGIN'],args.state.resolve());factory=False
+    uvicorn.run(target,factory=factory,host='127.0.0.1',port=args.port,
                 proxy_headers=False,access_log=False,limit_concurrency=32,timeout_keep_alive=5)
 
 
