@@ -28,7 +28,7 @@ pasar, kelemahan kompetitor, target trafik, dan model bisnis ada di
 | 2. Enam bloker keamanan | 6–8 minggu | Firewall, allowlist, DNS binding, TLS, kuota, capability | Bukti per bloker di host staging |
 | 2.5. Distribusi & SEO | 4–6 minggu | 30+ halaman intent, sitemap, Core Web Vitals | Terindeks dan mulai menerima kunjungan |
 | 3. Pipeline unduhan nyata | 5–7 minggu | API job, queue, worker, proxy media, TikTok matang | TikTok ≥90% success rate |
-| 4. Fitur produk | 4–5 minggu | Slideshow→MP4, ZIP, Video HD, gambar/album | Semua fitur inti TikTok ada |
+| 4. Fitur produk | 4–5 minggu | Slideshow→MP4, ZIP, HD/MP3, gambar/album | Semua fitur inti TikTok ada |
 | 5. Kepatuhan & abuse | 3–4 minggu | Rate limit, takedown, privasi, registrasi PSE | Review kepatuhan lulus |
 | 6. Beta → publik | 4–6 minggu | Beta tertutup, load test, security review, launch | Sign-off pemilik |
 
@@ -388,14 +388,15 @@ Tambahan: p95 latensi <30 detik per unduhan, dan biaya bandwidth <$0,005 per und
 | **Slideshow → MP4** | Belum ada | Gabungkan gambar + musik jadi video; ini fitur yang paling dicari untuk TikTok |
 | **Download All (ZIP)** | Belum ada | Unduh seluruh slide sekaligus, urutan benar |
 | Video HD | Kandidat | Integrasikan `clipora_v8_formats_lab`, tampilkan ukuran/bitrate, jelaskan bila HD tidak tersedia |
-| MP3 | Dihapus dari surface | Konversi via FFmpeg; ditawarkan kembali hanya bila pipeline terbukti dan diminta |
+| MP3 | Preferensi UI, belum nyata | Konversi via FFmpeg, tampilkan bitrate, batasi durasi |
 | Gambar & album | Backend ada, extractor belum | Extractor Pinterest, carousel TikTok/IG, ZIP, urutan gambar, batas jumlah |
 | Progres unduhan | Belum ada | SSE atau polling; tampilkan tahap (fetch → convert → siap) |
 | Aksesibilitas & mobile | Baik, perlu audit | Audit keyboard, screen reader, kontras, 320px |
 
-**Kriteria keluar:** dua menu (Video, Photo) berfungsi penuh tanpa label `Soon`, dan tidak ada
-elemen UI yang menjanjikan fitur yang belum ada. History dan MP3 sudah diputuskan keluar dari
-scope — jangan dimasukkan kembali tanpa keputusan produk baru.
+**Kriteria keluar:** dua menu (Video, Photo) berfungsi penuh tanpa label `Soon`, ketiga format
+(Video, Video HD, MP3) benar-benar menghasilkan file, dan tidak ada elemen UI yang menjanjikan
+fitur yang belum ada. History sudah diputuskan keluar dari scope — jangan dimasukkan kembali
+tanpa keputusan produk baru.
 
 ## 10. Fase 5 — Kepatuhan, abuse, privasi (3–4 minggu)
 
@@ -436,7 +437,7 @@ dengan pemain mapan. Alternatif yang dipertimbangkan di
 | Rilis | Isi | Prasyarat |
 | --- | --- | --- |
 | v0.1 (minggu 4–6) | TikTok saja, 50 pengguna undangan | Fase 0.5 + Fase 1 |
-| v0.2 (minggu 10–12) | Slideshow → MP4, ZIP, Video HD | Media proxy |
+| v0.2 (minggu 10–12) | Slideshow → MP4, ZIP, MP3 | Media proxy |
 | v0.3 (minggu 14–16) | Pinterest + Instagram | Allowlist diperluas |
 | v0.4 (minggu 18–20) | 30 halaman SEO | Fase 2.5 |
 | v1.0 (minggu 24+) | YouTube, kepatuhan lengkap | Enam bloker tertutup |

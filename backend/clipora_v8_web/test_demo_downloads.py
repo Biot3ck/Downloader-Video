@@ -117,6 +117,7 @@ class DemoDownloadTests(unittest.TestCase):
         client = self.client()
         for fmt, kind, url, media in (('video', 'video', TIKTOK, 'video/mp4'),
                                       ('hd', 'video', TIKTOK, 'video/mp4'),
+                                      ('mp3', 'video', TIKTOK, 'audio/mpeg'),
                                       ('image', 'images', PIN, 'image/jpeg')):
             data = self.issue(client, fmt, kind, url).json()
             served = client.get(data['url'])
@@ -124,9 +125,10 @@ class DemoDownloadTests(unittest.TestCase):
             self.assertEqual(served.headers['content-type'], media, fmt)
             self.assertIn(data['filename'], served.headers['content-disposition'], fmt)
 
-    def test_mp3_is_not_a_supported_format(self):
+    def test_mp3_download_is_offered_only_for_video_posts(self):
         client = self.client()
-        self.assertEqual(self.issue(client, 'mp3', 'video', TIKTOK).status_code, 422)
+        # Photo posts cannot produce audio; the format list is per media kind.
+        self.assertEqual(self.issue(client, 'mp3', 'images', PIN).status_code, 422)
 
     def test_mismatched_or_unknown_formats_are_rejected(self):
         client = self.client()

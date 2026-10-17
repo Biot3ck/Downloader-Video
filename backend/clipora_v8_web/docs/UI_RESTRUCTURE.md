@@ -1,8 +1,9 @@
 > Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
 >
-> **Perubahan 17 Oktober 2026:** surface dipersempit ke dua fitur. Menu Audio Downloader,
-> menu History, dan format MP3 dihapus — bukan sekadar dinonaktifkan. Rincian di bawah yang
-> menyebut empat menu atau MP3 adalah catatan historis.
+> **Perubahan 17 Oktober 2026:** surface dipersempit ke dua menu — Video Downloader dan Photo
+> Downloader. Menu Audio Downloader dan menu History dihapus, bukan sekadar dinonaktifkan.
+> Format MP3 dipertahankan sebagai pilihan di dalam halaman Video. Rincian di bawah yang
+> menyebut empat menu atau halaman Audio adalah catatan historis.
 
 # Clipora — restrukturisasi UI/UX
 

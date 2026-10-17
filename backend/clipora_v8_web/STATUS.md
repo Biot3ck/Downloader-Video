@@ -10,7 +10,7 @@ berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 | --- | --- |
 | Siap unduhan publik? | **Tidak.** Gate `503`, `ready_for_public_launch: false` |
 | Siap demo internal? | **Ya**, dengan state privat dan hanya loopback |
-| Fitur aktif | Pengenalan link Video & Photo |
+| Fitur aktif | Pengenalan link Video & Photo; format Video, Video HD, MP3 |
 | Fitur belum ada | Ekstraksi/konversi media |
 | Bloker publik terbuka | 6 (butuh host staging Linux terpisah) |
 
@@ -57,16 +57,17 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
 1. **Image web mewarisi image worker.** `clipora-worker:v8-dns` membawa FFmpeg, yt-dlp dan
    library codec; web tier tidak membutuhkannya. Pemisahan ke runtime Python minimal adalah
    perubahan terpisah yang harus diaudit ulang. Pin ada di `base_image.lock`.
-2. **Audio dan History dihapus dari surface.** Menu Audio Downloader, menu History, dan format
-   MP3 tidak lagi ada di markup, JavaScript, maupun route demo. Permintaan ke keduanya
-   mengembalikan `404`/`422`; tidak ada sisa tombol nonaktif.
+2. **Audio Downloader dan History dihapus dari surface.** Halaman Audio terpisah dan menu
+   History tidak lagi ada di markup, JavaScript, maupun route demo. MP3 **tetap ada** sebagai
+   pilihan format di dalam halaman Video. Permintaan ke `/api/v8/audio` dan `/api/v8/history`
+   mengembalikan `404`.
 3. **Kandidat format video/MP3 belum terintegrasi.** `clipora_v8_formats_lab` tidak diimpor
-   aplikasi, tidak disajikan HTTP, dan tidak masuk image. Lab masih memuat jalur MP3 sebagai
-   bahan riset, tetapi MP3 bukan lagi format yang ditawarkan surface.
+   aplikasi, tidak disajikan HTTP, dan tidak masuk image. MP3 yang tampil di UI masih berupa
+   preferensi dan file sampel, bukan konversi nyata.
 4. **Kode arsip Tools** (`tools_archive/device-preview`) disimpan sebagai referensi, tidak
    dimuat produk, dan diuji mengembalikan `404`.
-5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan tiga file sampel di
-   `assets/demo/` (±65 KB) plus caption contoh yang ikut dibundel. Preview, caption, dan file
+5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan empat file sampel di
+   `assets/demo/` (±92 KB) plus caption contoh yang ikut dibundel. Preview, caption, dan file
    itu bukan isi post yang ditempel; tidak ada request keluar. File demo tidak masuk image
    produksi (allowlist `FILES` di `build_image.py`), dan route-nya tidak pernah didaftarkan pada
    origin HTTPS. Gate publik tetap `503`.

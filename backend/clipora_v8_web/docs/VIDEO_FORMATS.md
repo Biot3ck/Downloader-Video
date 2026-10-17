@@ -1,14 +1,15 @@
 > Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
 >
-> **Perubahan 17 Oktober 2026:** MP3 dihapus dari surface. Halaman Video kini hanya
-> menawarkan Video dan Video HD. Rincian MP3 di bawah dipertahankan sebagai catatan riset
-> `clipora_v8_formats_lab`, bukan sebagai fitur yang ditawarkan.
+> **Perubahan 17 Oktober 2026:** halaman Video menawarkan tiga format: Video, Video HD, dan
+> MP3. MP3 adalah pilihan format di dalam halaman Video, bukan halaman Audio terpisah. Rincian
+> MP3 di bawah adalah catatan riset `clipora_v8_formats_lab`; konversi audio nyata belum
+> terhubung ke aplikasi, sehingga MP3 saat ini masih berupa preferensi dan file sampel.
 
 # Video, Video HD, dan MP3
 
 ## Status sekarang
 
-Halaman Video menyediakan dua radio pilihan: Video dan Video HD. Pilihan adalah preferensi tampilan, bukan klaim format tersedia. Penjelasan unavailable berubah sesuai pilihan. Pada Photo kontrol disembunyikan. Tidak ada iklan, konversi, submit download, izin HD, API baru, atau penyimpanan pilihan permanen.
+Halaman Video menyediakan tiga radio pilihan: Video, Video HD, dan MP3. Pilihan adalah preferensi tampilan, bukan klaim format tersedia. Penjelasan unavailable berubah sesuai pilihan. Pada Photo kontrol disembunyikan. Tidak ada iklan, konversi, submit download, izin HD, API baru, atau penyimpanan pilihan permanen.
 
 Check link tetap hanya POST /api/v8/validate dengan url dan media_kind=video, termasuk ketika MP3 dipilih: yang diperiksa adalah platform sumber video, bukan kemampuan ekstraksi audio. Mengubah pilihan membatalkan pemeriksaan berjalan dan membersihkan hasil lama. Tidak mengubah backend atau gate 503.
 

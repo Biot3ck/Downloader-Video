@@ -38,7 +38,7 @@ memuat fixture, dan `--offline-workflow` tidak mengaktifkan internet.
 
 ### Mode demo unduhan
 
-Untuk mencoba alur lengkap (tempel link → preview + caption → pilih Video/Video HD → file
+Untuk mencoba alur lengkap (tempel link → preview + caption → pilih Video/Video HD/MP3 → file
 terunduh) tanpa menyentuh internet, jalankan dengan flag demo:
 
 ```sh
@@ -52,7 +52,7 @@ Mode ini menambahkan empat route loopback-only:
 | `POST /api/v8/demo/preview` | Memvalidasi link, mengembalikan caption contoh dan URL preview bertanda tangan HMAC |
 | `GET /api/v8/demo/preview/<token>` | Mengirim sampel secara inline untuk elemen `<video>`/`<img>` |
 | `POST /api/v8/demo/download` | Memvalidasi link, mengembalikan URL unduhan bertanda tangan HMAC (berlaku 5 menit) |
-| `GET /api/v8/demo/file/<token>` | Mengirim salah satu dari tiga file contoh di `assets/demo/` sebagai lampiran |
+| `GET /api/v8/demo/file/<token>` | Mengirim salah satu dari empat file contoh di `assets/demo/` sebagai lampiran |
 
 File dan caption yang ditampilkan adalah **sampel yang dibundel di repo**, bukan isi post yang
 ditempel. UI menyebutkan hal ini secara eksplisit, dan `POST /api/v8/download` tetap `503`. Route

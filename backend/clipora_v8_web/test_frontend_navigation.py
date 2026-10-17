@@ -31,11 +31,15 @@ class FrontendNavigationTests(unittest.TestCase):
             self.assertEqual(page.scripts,['/assets/app.js'])
             for value in ('Try a sample','sample-start','image-sample-gallery','type="file"','ON YOUR DEVICE','Your image gallery'):
                 self.assertNotIn(value,text)
-    def test_audio_and_history_are_absent_not_merely_disabled(self):
+    def test_audio_and_history_pages_are_absent_but_mp3_format_remains(self):
         text=self.client().get('/').text
-        for value in ('Audio Downloader','Audio','History','audio-view','history-view',
-                      'audio-url','format-mp3','MP3','nav-badge','coming soon'):
+        for value in ('Audio Downloader','History','audio-view','history-view',
+                      'audio-url','nav-badge','coming soon'):
             self.assertNotIn(value,text)
+        # MP3 is a download format inside the Video surface, not a separate page.
+        self.assertIn('id="format-mp3"',text)
+        self.assertIn('MP3',text)
+        self.assertNotIn('320 kbps',text)
         # Only video and photo links are offered.
         self.assertIn('Video Downloader',text)
         self.assertIn('Photo Downloader',text)

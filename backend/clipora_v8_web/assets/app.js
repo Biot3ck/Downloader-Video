@@ -23,11 +23,13 @@ const drafts={video:'',photo:''};
 const sampleNotes={
   video:'Bundled sample: 640×360 video, 3 seconds. Not the post you pasted.',
   hd:'Bundled sample: 1280×720 video, 3 seconds. Not the post you pasted.',
+  mp3:'Bundled sample: MP3 audio, 3 seconds. Not the post you pasted.',
   image:'Bundled sample: 1280×720 image. Not the post you pasted.'
 };
 const unavailableNotes={
   video:'Video downloads are not available in this build.',
   hd:'HD downloads are not available in this build.',
+  mp3:'MP3 extraction is not available in this build.',
   image:'Image downloads are not available in this build.'
 };
 function currentFormat(){
@@ -58,7 +60,7 @@ function resetCheck(){
   recognized=null;hideDownload();
 }
 input.addEventListener('input',resetCheck);
-for(const format of ['video','hd']){
+for(const format of ['video','hd','mp3']){
   document.getElementById('format-'+format).addEventListener('change',()=>{
     downloadStatus.textContent='';updateFormatNote();
   });

@@ -49,7 +49,7 @@ Untuk mencoba alur unduhan tanpa internet, tambahkan `--demo-downloads`:
 .venv/bin/python -B clipora_v8_web/run_local.py --port 8090 --demo-downloads
 ```
 
-Setelah link dikenali, opsi Video / Video HD muncul dan tombol Download mengirim **file
+Setelah link dikenali, opsi Video / Video HD / MP3 muncul dan tombol Download mengirim **file
 contoh** yang dibundel di repo — bukan isi post asli. `POST /api/v8/download` tetap `503`.
 
 ## Menjalankan tes

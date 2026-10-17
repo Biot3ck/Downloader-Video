@@ -1,7 +1,7 @@
 """Bundled sample media for the explicit local demo preview.
 
 The public gate stays closed: ``/api/v8/download`` still returns 503. This module
-serves three fixed files from ``assets/demo`` and never reads a caller-supplied
+serves four fixed files from ``assets/demo`` and never reads a caller-supplied
 path, contacts the network, or starts a worker. Links are HMAC-signed and expire.
 """
 import base64
@@ -23,9 +23,10 @@ TTL = 300
 SAMPLES = {
     'video': ('sample-360p.mp4', 'video/mp4'),
     'hd': ('sample-720p.mp4', 'video/mp4'),
+    'mp3': ('sample.mp3', 'audio/mpeg'),
     'image': ('sample.jpg', 'image/jpeg'),
 }
-ALLOWED = {'video': frozenset({'video', 'hd'}), 'images': frozenset({'image'})}
+ALLOWED = {'video': frozenset({'video', 'hd', 'mp3'}), 'images': frozenset({'image'})}
 PREVIEW = {'video': ('video', 640, 360), 'images': ('image', 1280, 720)}
 PLATFORMS = frozenset(HOSTS.values())
 DISPLAY = {'youtube': 'YouTube', 'tiktok': 'TikTok', 'instagram': 'Instagram', 'pinterest': 'Pinterest'}
