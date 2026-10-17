@@ -19,7 +19,7 @@ Ini perlindungan konfigurasi penyimpanan lokal; bukan isolasi terhadap administr
 | Tiga tier/mTLS, worker yt-dlp aktual | Kasus valid menghasilkan MP4; wrong hostname dan CA tak dipercaya ditolak; bypass worker/gateway/peer diuji pada lease aktif; IPv6 DROP dan pencabutan lease terbukti pada namespace Docker |
 | Crash/recovery aktual | SIGKILL hanya proses web disposable; helper tetap memegang leader lock; job terputus gagal, file parsial tidak disajikan; resource milik tes dibersihkan |
 | Alur offline sesudah perbaikan | State baru privat → sesi → queue → worker Docker aktual → MP4 → owned file/Range/HEAD; sesi asing ditolak; gate HD/reward klien tetap 503 |
-| Dependensi image | Inventaris 17 distribusi Python dan 289 paket OS. Lookup OSV untuk 17 pasangan nama/versi Python selesai tanpa pagination/advisory yang cocok; bukan bukti bebas kerentanan. Paket OS/FFmpeg/library native belum selesai vulnerability review |
+| Dependensi image | Lookup OSV untuk 17 pasangan nama/versi Python tanpa advisory yang cocok. Review Debian 289 binary/207 source-version menemukan delapan record yang memerlukan upgrade pada Expat, JPEG XL dan XZ, 156 open dan empat undetermined untuk triage; Expat bundled Python juga perlu review. Patch belum diterapkan. Lihat OS_PACKAGE_REVIEW.md |
 | Preflight host | BLOCKED sebagaimana mestinya pada macOS; query daemon sengaja tidak dijalankan untuk attestation host Linux. Check yang dilewati berarti belum terbukti, bukan penemuan bahwa Docker tidak memiliki fitur tersebut |
 
 Nama report pada outputs chat: clipora-security-current-kernel-valid.json, -kernel-wrong-host.json, -kernel-untrusted-ca.json, -web-default.json, -web-owned.json, -restart.json, -offline-flow.json, -inventory.json, -python-advisories.json dan -preflight.json. Inventory/advisory report menyertakan image ID yang diperiksa. Lookup Python menggunakan API resmi https://google.github.io/osv.dev/post-v1-querybatch/ melalui alat audit host; tidak membuka egress downloader/container atau mengirim URL pengguna/cookie/secret.
@@ -40,5 +40,7 @@ Audit legacy tetap 26/32 dengan enam blocker. Sebagian check legacy memang hardc
 Tambahan wajib: kandidat submission/scheduler/extractor publik yang terintegrasi, ingress TLS/trusted proxy, vulnerability review OS/native/dependency, uji platform yang diizinkan, serta runbook/rollback dan review pemilik. API pengenalan URL dan fixture offline tidak membuktikan extractor publik berfungsi. HD/MP3/rewarded ads masih kandidat terpisah dan bukan alasan melewati gate.
 
 ## Tahap berikut yang memerlukan lingkungan berbeda
+
+Pembaruan scope: pemilik kembali memilih tanpa VM. Review pencocokan OS dan alat audit lokal sudah dijalankan, dengan [rencana patch/staging](OS_PACKAGE_REVIEW.md); ini tidak memberikan sign-off paket atau host Linux. Bukti OS baru: outputs/clipora-os-package-review-final.json dan clipora-os-native-linkage.json pada workspace chat.
 
 Sediakan Linux staging terpisah melalui pilihan pemilik, tanpa menyentuh VPS produksi. Jalankan urutan ../clipora_v8_staging_linux/README.md dan kumpulkan bukti enam blocker di atas pada kandidat deployment yang sama. Setelah hasil dan konfigurasi final dapat ditinjau, lakukan sign-off keamanan; persetujuan aktivasi egress/deployment tetap langkah tersendiri. Tidak ada fungsi aktivasi atau sign-off otomatis pada perubahan ini.

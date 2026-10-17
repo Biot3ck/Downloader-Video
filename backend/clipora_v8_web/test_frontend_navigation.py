@@ -40,7 +40,7 @@ class FrontendNavigationTests(unittest.TestCase):
         self.assertNotIn('320 kbps',text)
     def test_default_product_does_not_serve_developer_or_archived_code(self):
         client=self.client()
-        for path in ('/dev','/assets/dev.js','/assets/dev.css','/tools_archive/device-preview/images.js'):
+        for path in ('/dev','/assets/dev.js','/assets/dev.css','/tools_archive/device-preview/images.js','/os_review.py','/assets/os_review.py'):
             self.assertEqual(client.get(path).status_code,404,path)
     def test_explicit_loopback_preview_preserves_developer_utilities(self):
         client=self.client(enabled=True)

@@ -22,6 +22,8 @@ Kode preview file perangkat untuk calon Tools disimpan pada tools_archive/device
 
 Hasil pemeriksaan dan blocker persetujuan publik terbaru: [RELEASE_SECURITY.md](RELEASE_SECURITY.md). State limiter wajib path kanonis tanpa symlink, direktori milik UID proses 0700 dan database regular privat 0600; konfigurasi yang tidak aman ditolak tanpa diperbaiki otomatis. Launcher lokal sudah memakai path kanonis.
 
+[Review paket OS dan rencana staging/patch](OS_PACKAGE_REVIEW.md) mencatat pembaruan Expat/JPEG XL/XZ yang diperlukan, library bundled Python dan alat audit readonly. Belum ada patch runtime, VM atau aktivasi unduhan publik.
+
 Host/Origin persis, POST 4096 byte/deadline 5 detik, CSP origin sendiri, tanpa unsafe-inline/CDN, limiter SQLite, ownership cookie dan retensi tetap berlaku. POST /api/v8/download tetap 503; validasi hostname bukan bukti extractor. UI tidak menyimpan URL draft secara permanen atau menciptakan API audio/history.
 
 Launcher selalu 127.0.0.1, tanpa trust forwarded headers dan tanpa access log request. --offline-workflow memberi akses Docker hanya untuk fixture lokal yang ditentukan kode. Bukan launcher deployment produksi.
