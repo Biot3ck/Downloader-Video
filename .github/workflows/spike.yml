@@ -22,6 +22,14 @@ on:
         description: 'Tiru fingerprint TLS browser (mis. chrome). Kosongkan untuk mode default. Butuh curl_cffi.'
         required: false
         default: ''
+      extractor_args:
+        description: 'Args extractor yt-dlp, mis. youtube:player_client=android_vr. Kosongkan untuk default.'
+        required: false
+        default: ''
+      platform:
+        description: 'Batasi ke satu platform (tiktok/instagram/pinterest/youtube). Kosong = semua.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -57,10 +65,18 @@ jobs:
         working-directory: backend
         env:
           IMPERSONATE: ${{ inputs.impersonate }}
+          EXTRACTOR_ARGS: ${{ inputs.extractor_args }}
+          PLATFORM: ${{ inputs.platform }}
         run: |
           args=(--urls clipora_v8_spike/urls.txt --out ../hasil-spike.csv)
           if [ -n "$IMPERSONATE" ]; then
             args+=(--impersonate "$IMPERSONATE")
+          fi
+          if [ -n "$EXTRACTOR_ARGS" ]; then
+            args+=(--extractor-args "$EXTRACTOR_ARGS")
+          fi
+          if [ -n "$PLATFORM" ]; then
+            args+=(--platform "$PLATFORM")
           fi
           python -B -m clipora_v8_spike.spike "${args[@]}"
 

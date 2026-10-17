@@ -284,6 +284,13 @@ class ProbeCommandTests(unittest.TestCase):
         self.assertEqual(cmd[-1], "https://example.test/x")
         self.assertEqual(cmd[cmd.index("--cookies") + 1], "/tmp/c.txt")
 
+    def test_extractor_args_are_passed_before_the_url(self) -> None:
+        cmd = probe_command("https://example.test/x",
+                            extractor_args="youtube:player_client=android_vr")
+        self.assertEqual(cmd[-1], "https://example.test/x")
+        self.assertEqual(cmd[cmd.index("--extractor-args") + 1],
+                         "youtube:player_client=android_vr")
+
 
 class CsvRoundTripTests(unittest.TestCase):
     def test_read_ok_urls(self) -> None:

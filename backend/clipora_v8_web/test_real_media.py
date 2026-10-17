@@ -199,6 +199,29 @@ class RealRouteTests(unittest.TestCase):
 
 
 class ExtractorTests(unittest.TestCase):
+    def test_ytdl_opts_request_a_browser_fingerprint_when_available(self):
+        with patch.object(real_media, '_impersonation_target', return_value='chrome'):
+            options = real_media._ytdl_opts()
+        self.assertEqual(options['impersonate'], 'chrome')
+
+    def test_ytdl_opts_stay_plain_without_curl_cffi(self):
+        with patch.object(real_media, '_impersonation_target', return_value=None):
+            options = real_media._ytdl_opts()
+        self.assertNotIn('impersonate', options)
+
+    def test_impersonation_target_is_none_without_curl_cffi(self):
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name in ('curl_cffi', 'yt_dlp.networking.impersonate'):
+                raise ImportError(name)
+            return real_import(name, *args, **kwargs)
+
+        with patch.object(builtins, '__import__', fake_import):
+            self.assertIsNone(real_media._impersonation_target())
+
     def test_probe_rejects_audio_only_slideshows(self):
         info = {'formats': [{'vcodec': 'none', 'acodec': 'mp3'}], 'duration': 24}
         with patch('yt_dlp.YoutubeDL', lambda options: FakeYDL(info)):

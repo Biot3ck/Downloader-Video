@@ -262,7 +262,8 @@ def analyze(info: dict) -> dict:
 
 
 def probe_command(url: str, impersonate: str | None = None,
-                  cookies: Path | None = None) -> list[str]:
+                  cookies: Path | None = None,
+                  extractor_args: str | None = None) -> list[str]:
     """Susun perintah yt-dlp untuk satu URL.
 
     `--impersonate` meniru fingerprint TLS browser. Ini penting untuk TikTok:
@@ -286,14 +287,18 @@ def probe_command(url: str, impersonate: str | None = None,
         cmd += ["--impersonate", impersonate]
     if cookies:
         cmd += ["--cookies", str(cookies)]
+    if extractor_args:
+        cmd += ["--extractor-args", extractor_args]
     cmd.append(url)
     return cmd
 
 
 def probe(url: str, timeout_s: int = 45, impersonate: str | None = None,
-          cookies: Path | None = None) -> tuple[dict | None, str]:
+          cookies: Path | None = None,
+          extractor_args: str | None = None) -> tuple[dict | None, str]:
     """Jalankan yt-dlp dan kembalikan (metadata, pesan galat). Tidak mengunduh media."""
-    cmd = probe_command(url, impersonate=impersonate, cookies=cookies)
+    cmd = probe_command(url, impersonate=impersonate, cookies=cookies,
+                        extractor_args=extractor_args)
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
     except subprocess.TimeoutExpired:
@@ -365,7 +370,8 @@ def verdict(summary: dict[str, dict]) -> str:
 
 
 def render_markdown(rows: list[dict], summary: dict[str, dict], source: str,
-                    egress: str = "unknown", mode: str = "") -> str:
+                    egress: str = "unknown", mode: str = "",
+                    decision: str | None = None) -> str:
     lines = [f"# Hasil spike kelayakan — {source}", ""]
     lines.append(f"**IP keluar:** `{egress}`")
     if mode:
@@ -387,7 +393,7 @@ def render_markdown(rows: list[dict], summary: dict[str, dict], source: str,
     if image_only_counts:
         detail = ", ".join(f"{name} {count}" for name, count in sorted(image_only_counts.items()))
         lines += ["", f"**Post hanya gambar (diukur terpisah, bukan kegagalan video):** {detail}"]
-    lines += ["", f"**Keputusan otomatis:** {verdict(summary)}", "", "## Kegagalan", ""]
+    lines += ["", f"**Keputusan otomatis:** {decision or verdict(summary)}", "", "## Kegagalan", ""]
     invalid = [row for row in rows if row.get("error_kind") == "invalid"]
     images = [row for row in rows if row.get("error_kind") == "image"]
     failures = [row for row in rows
@@ -431,7 +437,8 @@ def render_markdown(rows: list[dict], summary: dict[str, dict], source: str,
 
 
 def run(urls: list[str], recheck_ok: set[str] | None = None,
-        impersonate: str | None = None, cookies: Path | None = None) -> list[dict]:
+        impersonate: str | None = None, cookies: Path | None = None,
+        extractor_args: str | None = None) -> list[dict]:
     import time
 
     rows: list[dict] = []
@@ -446,7 +453,8 @@ def run(urls: list[str], recheck_ok: set[str] | None = None,
             print(f"[{index}/{len(urls)}] {platform:10} LEWAT {url[:70]}", flush=True)
             continue
         started = time.monotonic()
-        info, error = probe(url, impersonate=impersonate, cookies=cookies)
+        info, error = probe(url, impersonate=impersonate, cookies=cookies,
+                            extractor_args=extractor_args)
         elapsed = round(time.monotonic() - started, 2)
         if info is None:
             result = Result(platform=platform, url=url, ok=False, error=error,
@@ -488,6 +496,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="tiru fingerprint TLS browser, mis. 'chrome' (butuh curl_cffi). "
                              "Wajib dicoba bila platform menolak IP datacenter.")
     parser.add_argument("--cookies", type=Path, help="berkas cookies Netscape untuk yt-dlp")
+    parser.add_argument("--extractor-args", metavar="KEY:VALUE",
+                        help="teruskan ke yt-dlp, mis. 'youtube:player_client=android_vr'")
+    parser.add_argument("--platform", choices=PLATFORMS,
+                        help="hanya uji satu platform (mempercepat eksperimen)")
     parser.add_argument("--egress-only", action="store_true", help="hanya laporkan IP keluar lalu keluar")
     parser.add_argument("--audit-only", action="store_true",
                         help="periksa komposisi --urls tanpa akses jaringan")
@@ -523,6 +535,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.audit_only:
         return 0 if not composition["warnings"] else 2
 
+    if args.platform:
+        urls = [url for url in urls if classify(url) == args.platform]
+        if not urls:
+            print(f"tidak ada URL untuk platform {args.platform}", file=sys.stderr)
+            return 1
+
     egress = public_ip()
     warning = egress_warning(egress)
     print(f"IP keluar: {egress}")
@@ -538,12 +556,21 @@ def main(argv: list[str] | None = None) -> int:
         mode = f"`--impersonate {args.impersonate}`"
     if args.cookies:
         mode += " + cookies"
+    if args.extractor_args:
+        mode += f" + `--extractor-args {args.extractor_args}`"
+    if args.platform:
+        mode += f" + hanya {args.platform}"
     print(f"Mode yt-dlp: {mode}")
-    rows = run(urls, recheck_ok, impersonate=args.impersonate, cookies=args.cookies)
+    rows = run(urls, recheck_ok, impersonate=args.impersonate, cookies=args.cookies,
+               extractor_args=args.extractor_args)
     write_csv(rows, args.out)
 
     summary = success_rate(rows)
-    markdown = render_markdown(rows, summary, args.out.name, egress, mode)
+    decision = None
+    if args.platform and args.platform != "tiktok":
+        decision = (f"Eksperimen satu platform ({args.platform}) — bukan keputusan Fase 0.5; "
+                    "keputusan tetap diukur dari TikTok.")
+    markdown = render_markdown(rows, summary, args.out.name, egress, mode, decision)
     report = args.out.with_suffix(".md")
     report.write_text(markdown, encoding="utf-8")
 

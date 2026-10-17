@@ -73,10 +73,31 @@ class MediaError(Exception):
         self.status = status
 
 
+def _impersonation_target():
+    """Return a browser TLS fingerprint target, or None when curl_cffi is absent.
+
+    TikTok serves an anti-bot page to datacenter IPs when the TLS handshake
+    looks like Python. The GitHub Actions spike went from 0/14 to 14/14 on
+    TikTok purely by adding ``--impersonate chrome``, so production needs the
+    same. curl_cffi stays optional: demo mode and the test suite must keep
+    working on a machine that never installed it.
+    """
+    try:
+        import curl_cffi  # noqa: F401
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+    except ImportError:
+        return None
+    return ImpersonateTarget.from_str('chrome')
+
+
 def _ytdl_opts():
-    return {'quiet': True, 'no_warnings': True, 'noprogress': True,
-            'noplaylist': True, 'socket_timeout': 20, 'retries': 2,
-            'extractor_retries': 2}
+    options = {'quiet': True, 'no_warnings': True, 'noprogress': True,
+               'noplaylist': True, 'socket_timeout': 20, 'retries': 2,
+               'extractor_retries': 2}
+    target = _impersonation_target()
+    if target is not None:
+        options['impersonate'] = target
+    return options
 
 
 def _ytdl_url(url, platform):
