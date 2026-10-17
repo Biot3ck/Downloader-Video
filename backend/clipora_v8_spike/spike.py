@@ -39,6 +39,32 @@ _PATTERNS = (
 # nama format bisa berubah antar versi API platform.
 _WATERMARK_HINTS = ("download", "watermark")
 
+# Pesan yt-dlp yang berarti URL-nya sendiri tidak bisa diuji (post dihapus, privat,
+# atau salah ketik). Baris seperti ini TIDAK boleh dihitung sebagai kegagalan
+# ekstraksi: kalau dihitung, success rate turun palsu dan bisa memicu vonis STOP.
+_INVALID_HINTS = (
+    "video unavailable",
+    "this video is unavailable",
+    "has been removed",
+    "no longer available",
+    "does not exist",
+    "not available",
+    "404",
+    "410",
+    "gone",
+    "private",
+    "requested content is not available",
+    "unable to find",
+    "no video formats found",
+    "unsupported url",
+)
+
+# Jumlah minimum URL valid sebelum success rate dianggap cukup untuk keputusan.
+MIN_SAMPLE = 10
+
+# Target URL per platform yang diminta berkas urls.txt.
+TARGET_PER_PLATFORM = 20
+
 
 def public_ip(timeout_s: int = 6) -> str:
     """IP publik keluar. Dicatat supaya hasil spike bisa diatribusikan ke IP tertentu."""
@@ -90,6 +116,31 @@ def read_urls(path: Path) -> list[str]:
     return urls
 
 
+def audit(urls: list[str]) -> dict:
+    """Periksa komposisi daftar URL sebelum jaringan dipakai.
+
+    Spike yang dijalankan dengan tiga URL TikTok akan menghasilkan angka yang
+    terlihat pasti padahal tidak berarti. Fungsi ini melaporkan kekurangan itu
+    di awal, bukan setelah 20 menit menunggu.
+    """
+    counts = {platform: 0 for platform in PLATFORMS}
+    unknown: list[str] = []
+    for url in urls:
+        platform = classify(url)
+        if platform in counts:
+            counts[platform] += 1
+        else:
+            unknown.append(url)
+    warnings = [
+        f"{platform}: {counts[platform]} URL (target {TARGET_PER_PLATFORM})"
+        for platform in PLATFORMS
+        if counts[platform] < TARGET_PER_PLATFORM
+    ]
+    if unknown:
+        warnings.append(f"{len(unknown)} URL tidak dikenali platformnya")
+    return {"counts": counts, "unknown": unknown, "warnings": warnings}
+
+
 def _size(value) -> int | None:
     if isinstance(value, (int, float)) and value > 0:
         return int(value)
@@ -101,12 +152,19 @@ def _looks_watermarked(format_id: str, url: str) -> bool:
     return any(hint in haystack for hint in _WATERMARK_HINTS)
 
 
+def error_kind(error: str) -> str:
+    """Pisahkan URL yang tidak bisa diuji dari kegagalan ekstraksi sungguhan."""
+    haystack = (error or "").lower()
+    return "invalid" if any(hint in haystack for hint in _INVALID_HINTS) else "extraction"
+
+
 @dataclass
 class Result:
     platform: str
     url: str
     ok: bool
     error: str = ""
+    error_kind: str = ""
     title: str = ""
     extractor: str = ""
     duration_s: float | None = None
@@ -203,11 +261,19 @@ def _short_error(text: str) -> str:
 
 
 def success_rate(rows: list[dict]) -> dict[str, dict]:
-    """Hitung success rate per platform. Platform tanpa data tidak dilaporkan."""
+    """Hitung success rate per platform.
+
+    URL yang terbukti mati/privat (`error_kind == "invalid"`) tidak dihitung di
+    penyebut: URL itu tidak mengukur kemampuan ekstraksi, dan memasukkannya akan
+    menurunkan success rate secara palsu.
+    """
     summary: dict[str, dict] = {}
     for row in rows:
         platform = row.get("platform") or "unknown"
-        bucket = summary.setdefault(platform, {"total": 0, "ok": 0, "errors": {}})
+        bucket = summary.setdefault(platform, {"total": 0, "ok": 0, "errors": {}, "skipped": 0})
+        if row.get("error_kind") == "invalid":
+            bucket["skipped"] += 1
+            continue
         bucket["total"] += 1
         if row.get("ok"):
             bucket["ok"] += 1
@@ -223,6 +289,9 @@ def verdict(summary: dict[str, dict]) -> str:
     """Terapkan kriteria berhenti dari ROADMAP bagian 4.3."""
     if "tiktok" not in summary or not summary["tiktok"]["total"]:
         return "TIDAK ADA DATA TIKTOK: isi URL TikTok dulu — keputusan Fase 0.5 bergantung padanya."
+    if summary["tiktok"]["total"] < MIN_SAMPLE:
+        return (f"DATA KURANG: hanya {summary['tiktok']['total']} URL TikTok yang valid "
+                f"(minimum {MIN_SAMPLE}). Tambah URL, jangan ambil keputusan dari sampel sekecil ini.")
     tiktok = summary["tiktok"]["rate"]
     others = [b["rate"] for name, b in summary.items() if name != "tiktok" and b["total"]]
     if tiktok < 70:
@@ -245,14 +314,25 @@ def render_markdown(rows: list[dict], summary: dict[str, dict], source: str, egr
     lines.append("| --- | ---: | ---: | ---: |")
     for platform, bucket in sorted(summary.items()):
         lines.append(f"| {platform} | {bucket['total']} | {bucket['ok']} | {bucket['rate']}% |")
+    skipped = {name: bucket.get("skipped", 0) for name, bucket in summary.items() if bucket.get("skipped")}
+    if skipped:
+        detail = ", ".join(f"{name} {count}" for name, count in sorted(skipped.items()))
+        lines += ["", f"**URL mati/privat, tidak dihitung:** {detail}"]
     lines += ["", f"**Keputusan otomatis:** {verdict(summary)}", "", "## Kegagalan", ""]
-    failures = [row for row in rows if not row.get("ok")]
+    invalid = [row for row in rows if row.get("error_kind") == "invalid"]
+    failures = [row for row in rows if not row.get("ok") and row.get("error_kind") != "invalid"]
     if not failures:
-        lines.append("Tidak ada kegagalan.")
+        lines.append("Tidak ada kegagalan ekstraksi.")
     else:
         lines.append("| Platform | Alasan |")
         lines.append("| --- | --- |")
         for row in failures[:40]:
+            lines.append(f"| {row.get('platform')} | `{(row.get('error') or '')[:90]}` |")
+    if invalid:
+        lines += ["", "## URL tidak bisa diuji (mati, dihapus, atau privat)", "",
+                  "URL ini tidak dihitung dalam success rate. Ganti dengan URL publik lain.", "",
+                  "| Platform | Alasan |", "| --- | --- |"]
+        for row in invalid[:40]:
             lines.append(f"| {row.get('platform')} | `{(row.get('error') or '')[:90]}` |")
     lines += ["", "## Rincian", ""]
     lines.append("| Platform | Tinggi maks | Ukuran | Format bersih | Format watermark | Slideshow |")
@@ -280,11 +360,18 @@ def run(urls: list[str], recheck_ok: set[str] | None = None) -> list[dict]:
         platform = classify(url)
         if recheck_ok is not None and url not in recheck_ok:
             continue
+        if platform == "unknown":
+            # Jangan buang waktu jaringan untuk situs yang tidak dinilai.
+            rows.append(Result(platform=platform, url=url, ok=False,
+                               error="platform tidak dikenali", error_kind="invalid").as_row())
+            print(f"[{index}/{len(urls)}] {platform:10} LEWAT {url[:70]}", flush=True)
+            continue
         started = time.monotonic()
         info, error = probe(url)
         elapsed = round(time.monotonic() - started, 2)
         if info is None:
-            result = Result(platform=platform, url=url, ok=False, error=error, elapsed_s=elapsed)
+            result = Result(platform=platform, url=url, ok=False, error=error,
+                            error_kind=error_kind(error), elapsed_s=elapsed)
         else:
             result = Result(platform=platform, url=url, ok=True, elapsed_s=elapsed, **analyze(info))
         rows.append(result.as_row())
@@ -314,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, help="berkas CSV hasil")
     parser.add_argument("--recheck", type=Path, help="CSV sebelumnya; hanya URL yang berhasil diuji ulang")
     parser.add_argument("--egress-only", action="store_true", help="hanya laporkan IP keluar lalu keluar")
+    parser.add_argument("--audit-only", action="store_true",
+                        help="periksa komposisi --urls tanpa akses jaringan")
     args = parser.parse_args(argv)
 
     if args.egress_only:
@@ -325,8 +414,8 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         return 0
 
-    if not args.urls or not args.out:
-        parser.error("--urls dan --out wajib kecuali dengan --egress-only")
+    if not args.urls or (not args.out and not args.audit_only):
+        parser.error("--urls dan --out wajib kecuali dengan --egress-only atau --audit-only")
 
     if not args.urls.is_file():
         print(f"berkas tidak ditemukan: {args.urls}", file=sys.stderr)
@@ -335,6 +424,16 @@ def main(argv: list[str] | None = None) -> int:
     if not urls:
         print("tidak ada URL di berkas masukan", file=sys.stderr)
         return 1
+
+    composition = audit(urls)
+    print("URL terbaca: " + ", ".join(f"{name} {count}" for name, count in composition["counts"].items()))
+    for warning in composition["warnings"]:
+        print(f"PERINGATAN: {warning}", file=sys.stderr)
+    for url in composition["unknown"][:5]:
+        print(f"PERINGATAN: platform tidak dikenali: {url}", file=sys.stderr)
+
+    if args.audit_only:
+        return 0 if not composition["warnings"] else 2
 
     egress = public_ip()
     warning = egress_warning(egress)

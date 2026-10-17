@@ -196,6 +196,10 @@ angka target di Fase 3.
 | TikTok ≥85% tetapi platform lain <50% | Lanjut, tetapi posisi produk dipersempit ke TikTok + satu platform |
 | TikTok <70% | **Berhenti dan tinjau ulang.** Pertimbangkan Model B atau alat pribadi |
 | Tidak ada data TikTok | Laporan menolak memberi vonis; lengkapi URL TikTok lebih dulu |
+| TikTok <10 URL valid | `DATA KURANG` — laporan menolak memberi vonis |
+
+URL yang terbukti mati atau privat tidak dihitung sebagai kegagalan ekstraksi; laporan
+memisahkannya agar success rate tidak turun palsu.
 
 Menetapkan kriteria berhenti sebelum mulai adalah satu-satunya cara agar keputusan nanti tidak
 diambil berdasarkan emosi setelah berbulan-bulan kerja.

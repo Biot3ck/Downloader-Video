@@ -8,8 +8,10 @@ from pathlib import Path
 
 from clipora_v8_spike.spike import (
     analyze,
+    audit,
     classify,
     egress_warning,
+    error_kind,
     read_ok_urls,
     read_urls,
     render_markdown,
@@ -136,6 +138,74 @@ class SummaryTests(unittest.TestCase):
         rows = [{"platform": "tiktok", "ok": True}]
         text = render_markdown(rows, success_rate(rows), "uji.csv", "203.0.113.9")
         self.assertIn("`203.0.113.9`", text)
+
+
+class ErrorKindTests(unittest.TestCase):
+    def test_dead_or_private_urls_are_not_extraction_failures(self) -> None:
+        for error in ("ERROR: [TikTok] 123: HTTP Error 404: Not Found",
+                      "ERROR: Video unavailable",
+                      "ERROR: This video is private",
+                      "ERROR: Requested content is not available"):
+            with self.subTest(error=error):
+                self.assertEqual(error_kind(error), "invalid")
+
+    def test_platform_failures_stay_extraction_failures(self) -> None:
+        for error in ("ERROR: Sign in to confirm you are not a bot",
+                      "timeout>45s",
+                      "ERROR: Unable to download webpage: HTTP Error 403",
+                      ""):
+            with self.subTest(error=error):
+                self.assertEqual(error_kind(error), "extraction")
+
+    def test_success_rate_ignores_dead_urls(self) -> None:
+        rows = [
+            {"platform": "tiktok", "ok": True},
+            {"platform": "tiktok", "ok": True},
+            {"platform": "tiktok", "ok": False, "error": "ERROR: Video unavailable",
+             "error_kind": "invalid"},
+            {"platform": "tiktok", "ok": False, "error": "ERROR: bot check",
+             "error_kind": "extraction"},
+        ]
+        summary = success_rate(rows)
+        self.assertEqual(summary["tiktok"]["total"], 3)
+        self.assertEqual(summary["tiktok"]["skipped"], 1)
+        self.assertEqual(summary["tiktok"]["rate"], 66.7)
+
+    def test_verdict_refuses_a_sample_that_is_too_small(self) -> None:
+        summary = {"tiktok": {"total": 3, "ok": 3, "rate": 100.0, "skipped": 0}}
+        self.assertIn("DATA KURANG", verdict(summary))
+        self.assertNotIn("LANJUT", verdict(summary))
+
+    def test_markdown_separates_dead_urls_from_failures(self) -> None:
+        rows = [
+            {"platform": "tiktok", "ok": True},
+            {"platform": "tiktok", "ok": False, "error": "ERROR: Video unavailable",
+             "error_kind": "invalid"},
+        ]
+        text = render_markdown(rows, success_rate(rows), "uji.csv")
+        self.assertIn("URL mati/privat, tidak dihitung", text)
+        self.assertIn("tiktok 1", text)
+        self.assertIn("URL tidak bisa diuji", text)
+        self.assertIn("Tidak ada kegagalan ekstraksi.", text)
+
+
+class AuditTests(unittest.TestCase):
+    def test_counts_per_platform_and_flags_short_lists(self) -> None:
+        urls = ["https://www.tiktok.com/@u/video/1", "https://youtu.be/a", "https://example.com/x"]
+        report = audit(urls)
+        self.assertEqual(report["counts"]["tiktok"], 1)
+        self.assertEqual(report["counts"]["youtube"], 1)
+        self.assertEqual(report["counts"]["instagram"], 0)
+        self.assertEqual(report["unknown"], ["https://example.com/x"])
+        self.assertIn("tiktok: 1 URL (target 20)", report["warnings"])
+        self.assertIn("1 URL tidak dikenali platformnya", report["warnings"])
+
+    def test_full_list_has_no_warnings(self) -> None:
+        urls = [f"https://www.tiktok.com/@u/video/{i}" for i in range(20)]
+        urls += [f"https://youtu.be/{i}" for i in range(20)]
+        urls += [f"https://www.instagram.com/reel/{i}/" for i in range(20)]
+        urls += [f"https://www.pinterest.com/pin/{i}/" for i in range(20)]
+        self.assertEqual(audit(urls)["warnings"], [])
 
 
 class EgressWarningTests(unittest.TestCase):

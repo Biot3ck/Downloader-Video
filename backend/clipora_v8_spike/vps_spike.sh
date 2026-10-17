@@ -54,6 +54,14 @@ if ! grep -qE '^https?://' "$HERE/urls.txt"; then
     exit 1
 fi
 
+# Periksa komposisi daftar di Mac sebelum menyentuh VPS: sampel yang terlalu kecil
+# menghasilkan angka yang terlihat pasti padahal tidak berarti.
+if command -v python3 >/dev/null 2>&1; then
+    ( cd "$HERE/.." && python3 -B -m clipora_v8_spike.spike \
+        --urls clipora_v8_spike/urls.txt --audit-only ) \
+        || echo "Peringatan: daftar URL belum lengkap. Spike tetap dijalankan, tetapi hasilnya lemah." >&2
+fi
+
 echo "== 1/4 Cek koneksi ke $HOST =="
 ssh "${SSH_OPTS[@]}" "$HOST" 'echo "terhubung: $(uname -srm)"; echo "ip: $(curl -s --max-time 6 https://api.ipify.org || echo tidak-terdeteksi)"'
 

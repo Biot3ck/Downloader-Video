@@ -30,6 +30,10 @@ cd backend/clipora_v8_spike
 # isi 20 URL publik per platform
 $EDITOR urls.txt
 
+# periksa komposisi daftar tanpa jaringan (cepat, tidak butuh VPS)
+python -B -m clipora_v8_spike.spike --urls urls.txt --audit-only
+# exit 0 = semua platform terisi, exit 2 = masih kurang
+
 # jalankan dari Mac Anda; skrip menyalin alat, memasang Python + yt-dlp di VPS,
 # menjalankan spike, lalu menarik hasilnya kembali
 ./vps_spike.sh root@203.0.113.10
@@ -61,8 +65,9 @@ Hasil masuk ke `hasil/`. **Jangan pakai angka dari sini untuk keputusan.**
 
 ## Yang dicatat
 
-Per URL: berhasil/gagal, alasan gagal, tinggi maksimum, ukuran file, jumlah format kandidat
-tanpa watermark, jumlah format ber-watermark, apakah post berupa slideshow, dan durasi eksekusi.
+Per URL: berhasil/gagal, alasan gagal, jenis gagal (`extraction` atau `invalid`), tinggi maksimum,
+ukuran file, jumlah format kandidat tanpa watermark, jumlah format ber-watermark, apakah post
+berupa slideshow, dan durasi eksekusi.
 
 Kolom "format bersih" adalah **petunjuk, bukan bukti**. Nama format bisa berubah antar versi
 API. Verifikasi visual tetap perlu: buka file hasil unduhan dan lihat sendiri.
@@ -77,6 +82,15 @@ Alat mencetak keputusan otomatis di akhir laporan:
 | TikTok ≥85% tetapi platform lain <50% | Persempit posisi produk ke TikTok + satu platform |
 | TikTok <70% | Berhenti dan tinjau ulang model produk |
 | Tidak ada data TikTok | Laporan menolak memberi vonis — isi URL TikTok dulu |
+| TikTok <10 URL valid | `DATA KURANG` — laporan menolak memberi vonis |
+
+### URL mati tidak dihitung
+
+URL yang sudah dihapus, privat, atau salah ketik (mis. `HTTP Error 404`, `Video unavailable`)
+dipisahkan ke bagian **URL tidak bisa diuji** dan **tidak masuk penyebut** success rate.
+Tanpa pemisahan ini, satu URL mati bisa menurunkan angka dan memicu vonis `STOP` palsu.
+Kalau laporan menyebut `URL mati/privat, tidak dihitung`, ganti URL tersebut dengan URL publik
+lain lalu jalankan ulang — jangan menaikkan angka secara manual.
 
 ## Batasan
 
