@@ -55,3 +55,11 @@ Produk: http://127.0.0.1:8090/ (atau /app). Developer offline: http://127.0.0.1:
 Extractor/download platform publik, metadata dan daftar format belum tersedia pada surface produk. API audio dan API list history berbasis pemilik/expiry belum diimplementasikan. Hubungkan fitur-fitur tersebut hanya setelah backend yang sesuai dan gate keamanan diterima; jangan mengganti gate dengan flag UI. Unduhan publik tetap dinonaktifkan, audit legacy tetap enam blocker. Tidak memasang VM, menyentuh VPS, atau deploy.
 
 Rollback UI: hentikan preview setelah job selesai, gunakan checkpoint/pre-ui-restructure di repo frontend, lalu jalankan kembali launcher yang sama. Tidak ada migrasi data atau perubahan format job.
+
+## Pemeriksaan lanjutan validasi tautan
+
+Hasil pemeriksaan kini langsung dibersihkan ketika URL diedit. Request yang masih berjalan dibatalkan; respons lama tidak dapat menimpa request baru atau menu lain. Error layanan 5xx dan batas 429 ditangani sebelum parsing JSON, sehingga halaman error HTML/proxy tidak ditampilkan sebagai pesan teknis. Pesan validasi 422 dari API tetap dipertahankan; respons JSON rusak atau kontrak sukses yang tidak sesuai menghasilkan pesan kegagalan.
+
+Perubahan lanjutan hanya assets/app.js, test_frontend_async.cjs dan dokumentasi ini. Enam unit test Node menguji pergantian input/menu, respons terlambat, 429/503, JSON rusak dan pesan validasi. Seluruh 86 tes Python tetap lulus (92 total), serta pemeriksaan container default/owned yang dijalankan berurutan setelah rebuild image offline. Browser aktual memverifikasi pengenalan video/foto, pembersihan hasil saat edit, penolakan URL platform lain dan viewport 390×844 tanpa overflow horizontal; viewport di-reset sesudahnya.
+
+History tetap unavailable: brief mengharuskan penggunaan API yang sudah ada, sedangkan API daftar job milik sesi belum tersedia. Tidak membuat endpoint history, data riwayat permanen atau hasil fixture pada produk. Penyempurnaan ini tidak mengubah backend, v7, gate unduhan publik maupun kebijakan jaringan.

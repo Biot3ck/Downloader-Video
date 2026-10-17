@@ -16,11 +16,16 @@ const drafts={video:'',photo:''};
 function showResult(title,description,isError=false){
   resultTitle.textContent=title;resultDescription.textContent=description;result.classList.toggle('error',isError);result.hidden=false;
 }
+function resetCheck(){
+  controller?.abort();controller=null;revision++;
+  button.disabled=false;button.textContent='Check link →';form.removeAttribute('aria-busy');result.hidden=true;
+}
+input.addEventListener('input',resetCheck);
 function navigate(focus=false){
   const key=location.hash.slice(1),next=Object.hasOwn(views,key)?key:'video';
   if(currentView===next)return;
   if(currentView==='video'||currentView==='photo')drafts[currentView]=input.value;
-  controller?.abort();controller=null;revision++;button.disabled=false;button.replaceChildren(document.createTextNode('Check link →'));
+  resetCheck();
   currentView=next;const view=views[next];
   links.forEach(link=>{if(link.dataset.view===next)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
   document.getElementById('feature-label').textContent=view.label;
@@ -45,9 +50,15 @@ form.addEventListener('submit',async event=>{
   const timeout=setTimeout(()=>requestController.abort(),10000);
   try{
     const response=await fetch('/api/v8/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:input.value.trim(),media_kind:view.kind}),signal:requestController.signal,cache:'no-store',credentials:'same-origin'});
-    const data=await response.json();if(operation!==revision)return;
-    if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'We could not check this link. Please try again.');
-    if(data.media_kind!==view.kind||!Object.hasOwn(names,data.platform)||data.public_downloads_enabled!==false||data.network_access_performed!==false)throw Error('This link could not be checked. Please try again.');
+    if(operation!==revision)return;
+    // Handle service errors before parsing: proxies may return HTML or no body.
+    if(response.status===429)throw Error('Too many checks. Please wait a moment and try again.');
+    if(response.status>=500)throw Error('Clipora is temporarily unavailable. Please try again shortly.');
+    let data;
+    try{data=await response.json();}catch{throw Error('We could not check this link. Please try again.');}
+    if(operation!==revision)return;
+    if(!response.ok)throw Error([400,422].includes(response.status)&&typeof data?.detail==='string'?data.detail:'We could not check this link. Please try again.');
+    if(!data||data.media_kind!==view.kind||!Object.hasOwn(names,data.platform)||data.public_downloads_enabled!==false||data.network_access_performed!==false)throw Error('This link could not be checked. Please try again.');
     showResult(names[data.platform]+' link recognized',"Downloads aren't available yet. The post and its contents have not been checked.");
   }catch(error){
     if(operation!==revision)return;
