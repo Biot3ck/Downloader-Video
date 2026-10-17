@@ -1,0 +1,27 @@
+# Internal runtime staging (no host port published). Browser preview uses the local launcher. Does not include any downloader, Docker socket, or public egress.
+name: clipora-v8-web-staging
+services:
+  web:
+    image: clipora-web:v8-staging
+    pull_policy: never
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 192m
+    cpus: 1
+    pids_limit: 64
+    tmpfs: ["/tmp:rw,nosuid,nodev,noexec,size=16m,uid=10001,gid=10001,mode=0700", "/state:rw,nosuid,nodev,noexec,size=4m,uid=10001,gid=10001,mode=0700"]
+    dns: ["127.0.0.1"]
+    environment:
+      CLIPORA_WEB_STATE: "/state"
+      CLIPORA_WEB_ORIGIN: "http://127.0.0.1:8091"
+    networks: [web_local]
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+networks:
+  web_local:
+    internal: true
