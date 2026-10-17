@@ -83,7 +83,7 @@ class DemoDownloadTests(unittest.TestCase):
 
     def test_preview_rejects_unknown_kinds_and_unrecognized_links(self):
         client = self.client()
-        self.assertEqual(self.preview(client, kind='audio').status_code, 422)
+        self.assertEqual(self.preview(client, kind='audio').status_code, 422)  # no audio surface
         for url in ('https://evil.example/a', 'javascript:alert(1)'):
             self.assertEqual(self.preview(client, url=url).status_code, 422, url)
 
@@ -117,13 +117,16 @@ class DemoDownloadTests(unittest.TestCase):
         client = self.client()
         for fmt, kind, url, media in (('video', 'video', TIKTOK, 'video/mp4'),
                                       ('hd', 'video', TIKTOK, 'video/mp4'),
-                                      ('mp3', 'video', TIKTOK, 'audio/mpeg'),
                                       ('image', 'images', PIN, 'image/jpeg')):
             data = self.issue(client, fmt, kind, url).json()
             served = client.get(data['url'])
             self.assertEqual(served.status_code, 200, fmt)
             self.assertEqual(served.headers['content-type'], media, fmt)
             self.assertIn(data['filename'], served.headers['content-disposition'], fmt)
+
+    def test_mp3_is_not_a_supported_format(self):
+        client = self.client()
+        self.assertEqual(self.issue(client, 'mp3', 'video', TIKTOK).status_code, 422)
 
     def test_mismatched_or_unknown_formats_are_rejected(self):
         client = self.client()

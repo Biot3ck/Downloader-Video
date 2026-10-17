@@ -15,7 +15,7 @@ function setup(){
       emit(name){return handlers[name]?.({preventDefault(){}});}};
   }
   const get=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id);};
-  get('format-video').value='video';get('format-hd').value='hd';get('format-mp3').value='mp3';
+  get('format-video').value='video';get('format-hd').value='hd';
   const location={hash:'#video'};
   const clipboard={readText:async()=>''};
   const context=vm.createContext({document:{getElementById:get,querySelector:selector=>selector.includes('checked')?get('format-video'):get('skip'),
@@ -94,7 +94,7 @@ test('format options appear only after a recognized link and never submit a down
   const done=ui.submit();respond(ui.requests[0]);await done;
   assert.equal(ui.get('video-formats').hidden,false);
   assert.ok(ui.get('format-note').textContent.includes('not available'));
-  for(const format of ['hd','mp3']){
+  for(const format of ['hd']){
     const before=ui.requests.length;
     ui.get('format-'+format).emit('change');
     assert.equal(ui.requests.length,before);

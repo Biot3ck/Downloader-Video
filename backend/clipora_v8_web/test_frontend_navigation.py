@@ -24,25 +24,21 @@ class FrontendNavigationTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
     def client(self,origin=ORIGIN,enabled=False):
         return TestClient(create_app(origin,Path(self.temp.name).resolve(),offline_sample_enabled=enabled),base_url=origin)
-    def test_four_feature_navigation_without_fixture_or_device_controls(self):
+    def test_two_feature_navigation_without_fixture_or_device_controls(self):
         for enabled in (False,True):
             text=self.client(enabled=enabled).get('/').text;page=Markup(text)
-            self.assertEqual(page.links,[('video','#video'),('photo','#photo'),('audio','#audio'),('history','#history')])
+            self.assertEqual(page.links,[('video','#video'),('photo','#photo')])
             self.assertEqual(page.scripts,['/assets/app.js'])
             for value in ('Try a sample','sample-start','image-sample-gallery','type="file"','ON YOUR DEVICE','Your image gallery'):
                 self.assertNotIn(value,text)
-    def test_unsupported_audio_is_disabled_and_history_honest(self):
-        text=self.client().get('/').text;page=Markup(text)
-        self.assertIn('audio-url',page.disabled)
-        self.assertIn('button',page.disabled)
-        self.assertIn("History isn't available yet",text)
-        self.assertIn('MP3',text)  # Preference in Video; extraction remains disabled.
-        self.assertNotIn('320 kbps',text)
-        # Unavailable destinations are labelled in the navigation itself, not
-        # only after the user has already navigated into a dead end.
-        self.assertEqual(text.count('class="nav-badge"'),2)
-        self.assertIn('Audio Downloader (coming soon)',text)
-        self.assertIn('History (coming soon)',text)
+    def test_audio_and_history_are_absent_not_merely_disabled(self):
+        text=self.client().get('/').text
+        for value in ('Audio Downloader','Audio','History','audio-view','history-view',
+                      'audio-url','format-mp3','MP3','nav-badge','coming soon'):
+            self.assertNotIn(value,text)
+        # Only video and photo links are offered.
+        self.assertIn('Video Downloader',text)
+        self.assertIn('Photo Downloader',text)
     def test_default_product_does_not_serve_developer_or_archived_code(self):
         client=self.client()
         for path in ('/dev','/assets/dev.js','/assets/dev.css','/tools_archive/device-preview/images.js','/os_review.py','/assets/os_review.py'):
@@ -65,7 +61,7 @@ class FrontendNavigationTests(unittest.TestCase):
             self.assertEqual(client.get(path).status_code,404)
         for kind in ('video','images','audio'):
             self.assertEqual(client.post('/api/v8/download',headers={'Origin':ORIGIN},json={'media_kind':kind,'url':'https://pin.it/a'}).status_code,503)
-        # Client assertions about ads/quality must never unlock the public gate.
+        # Client assertions about ads/quality/format must never unlock the public gate.
         for output in ('video','hd','mp3'):
             self.assertEqual(client.post('/api/v8/download',headers={'Origin':ORIGIN},
                 json={'url':'https://youtu.be/abc','format':output,'reward_completed':True}).status_code,503)

@@ -134,10 +134,13 @@ Berdasarkan apa yang paling dicari di pasar:
 1. Video tanpa watermark (bila stream tersedia)
 2. **Slideshow → MP4** (gambar + musik digabung) — fitur pembeda SnapTik
 3. **Download All (ZIP)** untuk slideshow
-4. MP3
-5. Story dan Notes (opsional, setelah inti stabil)
+4. Story dan Notes (opsional, setelah inti stabil)
 
 Tanpa nomor 2 dan 3, Anda kalah di fitur yang paling sering dicari untuk TikTok.
+
+> **Keputusan 17 Oktober 2026:** MP3 dan History diputuskan **keluar** dari scope produk.
+> Clipora hanya menawarkan unduhan video dan gambar. Kompetitor menawarkan MP3; ketiadaan itu
+> adalah trade-off yang disadari (kesederhanaan dan biaya konversi), bukan kelalaian.
 
 ### 7.3 Roadmap butuh alur kerja distribusi yang sekarang tidak ada
 
@@ -222,7 +225,7 @@ Alih-alih 30 minggu sebelum ada pengguna, pertimbangkan rilis bertahap:
 | Rilis | Isi | Prasyarat |
 | --- | --- | --- |
 | **v0.1 (minggu 4–6)** | TikTok saja, video tanpa watermark, UI bersih, tanpa iklan, dibatasi 50 pengguna | Fase 1 + spike kelayakan |
-| **v0.2 (minggu 10–12)** | Slideshow → MP4, ZIP, MP3 | Media proxy |
+| **v0.2 (minggu 10–12)** | Slideshow → MP4, ZIP, Video HD | Media proxy |
 | **v0.3 (minggu 14–16)** | Pinterest + Instagram | Allowlist diperluas |
 | **v0.4 (minggu 18–20)** | Halaman SEO intent, sitemap, 30 halaman | Distribusi |
 | **v1.0 (minggu 24+)** | YouTube, riwayat, kepatuhan lengkap | Enam bloker tertutup |

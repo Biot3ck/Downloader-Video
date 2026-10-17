@@ -3,9 +3,7 @@
 // explicit local demo preview is enabled. No worker, no network, no public gate.
 const views={
   video:{label:'Video Downloader',line:'Your videos.',accent:'One simple link.',description:'A simpler way to save the videos you love. Start with a link from your favorite platform.',kind:'video',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'YouTube, TikTok, Instagram, and Pinterest links.',platforms:['YouTube','TikTok','Instagram','Pinterest']},
-  photo:{label:'Photo Downloader',line:'Your photos.',accent:'One simple link.',description:'From a single photo to an entire carousel. Keep the moments you want to come back to.',kind:'images',caption:'Start with your photo post link',input:'Photo post URL',placeholder:'Paste a photo post or pin link here',help:'TikTok photo posts, Instagram posts, and Pinterest pins.',platforms:['TikTok','Instagram','Pinterest']},
-  audio:{label:'Audio Downloader',line:'Your audio.',accent:'Keep the sound.',description:'A dedicated place for audio from your videos. Audio downloads are not available yet.'},
-  history:{label:'History',line:'Your downloads.',accent:'In one place.',description:'A place for completed downloads, with clear file availability and expiry.'}
+  photo:{label:'Photo Downloader',line:'Your photos.',accent:'One simple link.',description:'From a single photo to an entire carousel. Keep the moments you want to come back to.',kind:'images',caption:'Start with your photo post link',input:'Photo post URL',placeholder:'Paste a photo post or pin link here',help:'TikTok photo posts, Instagram posts, and Pinterest pins.',platforms:['TikTok','Instagram','Pinterest']}
 };
 const names={youtube:'YouTube',tiktok:'TikTok',instagram:'Instagram',pinterest:'Pinterest'};
 const form=document.getElementById('downloadForm'),input=document.getElementById('url'),button=document.getElementById('check-link');
@@ -25,13 +23,11 @@ const drafts={video:'',photo:''};
 const sampleNotes={
   video:'Bundled sample: 640×360 video, 3 seconds. Not the post you pasted.',
   hd:'Bundled sample: 1280×720 video, 3 seconds. Not the post you pasted.',
-  mp3:'Bundled sample: MP3 audio, 3 seconds. Not the post you pasted.',
   image:'Bundled sample: 1280×720 image. Not the post you pasted.'
 };
 const unavailableNotes={
   video:'Video downloads are not available in this build.',
   hd:'HD downloads are not available in this build.',
-  mp3:'MP3 extraction is not available in this build.',
   image:'Image downloads are not available in this build.'
 };
 function currentFormat(){
@@ -62,7 +58,7 @@ function resetCheck(){
   recognized=null;hideDownload();
 }
 input.addEventListener('input',resetCheck);
-for(const format of ['video','hd','mp3']){
+for(const format of ['video','hd']){
   document.getElementById('format-'+format).addEventListener('change',()=>{
     downloadStatus.textContent='';updateFormatNote();
   });
@@ -78,7 +74,6 @@ function navigate(focus=false){
   document.getElementById('hero-line').textContent=view.line;document.getElementById('hero-accent').textContent=view.accent;
   document.getElementById('hero-description').textContent=view.description;document.title=view.label+' · Clipora';
   document.getElementById('link-view').hidden=!view.kind;
-  document.getElementById('audio-view').hidden=next!=='audio';document.getElementById('history-view').hidden=next!=='history';
   result.hidden=true;form.removeAttribute('aria-busy');
   availabilityText.textContent='Downloads unavailable';
   noticeText.textContent='Public downloads are currently unavailable. You can check whether your link uses a supported platform.';

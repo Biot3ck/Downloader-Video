@@ -11,7 +11,7 @@ berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 | Siap unduhan publik? | **Tidak.** Gate `503`, `ready_for_public_launch: false` |
 | Siap demo internal? | **Ya**, dengan state privat dan hanya loopback |
 | Fitur aktif | Pengenalan link Video & Photo |
-| Fitur belum ada | Audio, History, ekstraksi/konversi media |
+| Fitur belum ada | Ekstraksi/konversi media |
 | Bloker publik terbuka | 6 (butuh host staging Linux terpisah) |
 
 ## Tes
@@ -20,7 +20,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 
 | Paket | Jumlah | Perintah |
 | --- | ---: | --- |
-| `clipora_v8_web` | 93 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
+| `clipora_v8_web` | 94 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
 | `clipora_v8_formats_lab` | 8 | idem, ganti direktori |
 | `clipora_v8_firewall_candidate` | 46 | idem |
 | `clipora_v8_verified_tls` | 35 | idem |
@@ -30,7 +30,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_local_workflow` | 6 | idem |
 | `clipora_v8_spike` | 17 | idem (fungsi murni; tanpa jaringan) |
 | JavaScript frontend | 15 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **270** | |
+| **Total** | **271** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
@@ -57,14 +57,16 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
 1. **Image web mewarisi image worker.** `clipora-worker:v8-dns` membawa FFmpeg, yt-dlp dan
    library codec; web tier tidak membutuhkannya. Pemisahan ke runtime Python minimal adalah
    perubahan terpisah yang harus diaudit ulang. Pin ada di `base_image.lock`.
-2. **Audio dan History belum ada.** Ditandai `Soon` di navigasi dan "Not available yet" di
-   halamannya. Tidak ada API yang berpura-pura mendukungnya.
+2. **Audio dan History dihapus dari surface.** Menu Audio Downloader, menu History, dan format
+   MP3 tidak lagi ada di markup, JavaScript, maupun route demo. Permintaan ke keduanya
+   mengembalikan `404`/`422`; tidak ada sisa tombol nonaktif.
 3. **Kandidat format video/MP3 belum terintegrasi.** `clipora_v8_formats_lab` tidak diimpor
-   aplikasi, tidak disajikan HTTP, dan tidak masuk image.
+   aplikasi, tidak disajikan HTTP, dan tidak masuk image. Lab masih memuat jalur MP3 sebagai
+   bahan riset, tetapi MP3 bukan lagi format yang ditawarkan surface.
 4. **Kode arsip Tools** (`tools_archive/device-preview`) disimpan sebagai referensi, tidak
    dimuat produk, dan diuji mengembalikan `404`.
-5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan empat file sampel di
-   `assets/demo/` (±92 KB) plus caption contoh yang ikut dibundel. Preview, caption, dan file
+5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan tiga file sampel di
+   `assets/demo/` (±65 KB) plus caption contoh yang ikut dibundel. Preview, caption, dan file
    itu bukan isi post yang ditempel; tidak ada request keluar. File demo tidak masuk image
    produksi (allowlist `FILES` di `build_image.py`), dan route-nya tidak pernah didaftarkan pada
    origin HTTPS. Gate publik tetap `503`.

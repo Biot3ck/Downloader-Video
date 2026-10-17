@@ -28,7 +28,7 @@ pasar, kelemahan kompetitor, target trafik, dan model bisnis ada di
 | 2. Enam bloker keamanan | 6–8 minggu | Firewall, allowlist, DNS binding, TLS, kuota, capability | Bukti per bloker di host staging |
 | 2.5. Distribusi & SEO | 4–6 minggu | 30+ halaman intent, sitemap, Core Web Vitals | Terindeks dan mulai menerima kunjungan |
 | 3. Pipeline unduhan nyata | 5–7 minggu | API job, queue, worker, proxy media, TikTok matang | TikTok ≥90% success rate |
-| 4. Fitur produk | 4–5 minggu | Slideshow→MP4, ZIP, HD/MP3, gambar/album, History | Semua fitur inti TikTok ada |
+| 4. Fitur produk | 4–5 minggu | Slideshow→MP4, ZIP, Video HD, gambar/album | Semua fitur inti TikTok ada |
 | 5. Kepatuhan & abuse | 3–4 minggu | Rate limit, takedown, privasi, registrasi PSE | Review kepatuhan lulus |
 | 6. Beta → publik | 4–6 minggu | Beta tertutup, load test, security review, launch | Sign-off pemilik |
 
@@ -53,7 +53,7 @@ produk** dan mana yang masih **kandidat offline**.
 
 | Komponen | Kondisi | Dipakai produk? | Celah |
 | --- | --- | --- | --- |
-| UI empat menu + preview + demo download | Jalan | Ya (loopback) | Preview memakai sampel, bukan metadata nyata |
+| UI dua menu + preview + demo download | Jalan | Ya (loopback) | Preview memakai sampel, bukan metadata nyata |
 | `POST /api/v8/download` | Sengaja `503` | Tidak | Belum ada implementasi |
 | Queue durable + artifact delivery | Ada, teruji offline | Tidak | Belum tersambung ke API publik |
 | Ownership/session + Range/HEAD | Ada, teruji | Tidak | Belum dipasang di jalur publik |
@@ -388,15 +388,14 @@ Tambahan: p95 latensi <30 detik per unduhan, dan biaya bandwidth <$0,005 per und
 | **Slideshow → MP4** | Belum ada | Gabungkan gambar + musik jadi video; ini fitur yang paling dicari untuk TikTok |
 | **Download All (ZIP)** | Belum ada | Unduh seluruh slide sekaligus, urutan benar |
 | Video HD | Kandidat | Integrasikan `clipora_v8_formats_lab`, tampilkan ukuran/bitrate, jelaskan bila HD tidak tersedia |
-| MP3 | Kandidat | Konversi via FFmpeg, tampilkan bitrate, batasi durasi |
+| MP3 | Dihapus dari surface | Konversi via FFmpeg; ditawarkan kembali hanya bila pipeline terbukti dan diminta |
 | Gambar & album | Backend ada, extractor belum | Extractor Pinterest, carousel TikTok/IG, ZIP, urutan gambar, batas jumlah |
 | Progres unduhan | Belum ada | SSE atau polling; tampilkan tahap (fetch → convert → siap) |
-| History | Placeholder `Soon` | Daftar job per sesi, status file, tombol unduh ulang, hapus |
-| Audio | Placeholder `Soon` | Halaman khusus audio, memakai pipeline MP3 |
 | Aksesibilitas & mobile | Baik, perlu audit | Audit keyboard, screen reader, kontras, 320px |
 
-**Kriteria keluar:** empat menu berfungsi tanpa label `Soon`, dan tidak ada elemen UI yang
-menjanjikan fitur yang belum ada.
+**Kriteria keluar:** dua menu (Video, Photo) berfungsi penuh tanpa label `Soon`, dan tidak ada
+elemen UI yang menjanjikan fitur yang belum ada. History dan MP3 sudah diputuskan keluar dari
+scope — jangan dimasukkan kembali tanpa keputusan produk baru.
 
 ## 10. Fase 5 — Kepatuhan, abuse, privasi (3–4 minggu)
 
@@ -437,10 +436,10 @@ dengan pemain mapan. Alternatif yang dipertimbangkan di
 | Rilis | Isi | Prasyarat |
 | --- | --- | --- |
 | v0.1 (minggu 4–6) | TikTok saja, 50 pengguna undangan | Fase 0.5 + Fase 1 |
-| v0.2 (minggu 10–12) | Slideshow → MP4, ZIP, MP3 | Media proxy |
+| v0.2 (minggu 10–12) | Slideshow → MP4, ZIP, Video HD | Media proxy |
 | v0.3 (minggu 14–16) | Pinterest + Instagram | Allowlist diperluas |
 | v0.4 (minggu 18–20) | 30 halaman SEO | Fase 2.5 |
-| v1.0 (minggu 24+) | YouTube, riwayat, kepatuhan lengkap | Enam bloker tertutup |
+| v1.0 (minggu 24+) | YouTube, kepatuhan lengkap | Enam bloker tertutup |
 
 Ini bertentangan dengan prinsip "jangan buka sebelum enam bloker tertutup". Trade-off-nya nyata:
 rilis tertutup 50 orang dengan allowlist 4 domain punya permukaan risiko jauh lebih kecil daripada
