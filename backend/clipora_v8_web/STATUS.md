@@ -28,8 +28,9 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_staging_linux` | 8 | idem |
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
+| `clipora_v8_spike` | 12 | idem (fungsi murni; tanpa jaringan) |
 | JavaScript frontend | 15 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **253** | |
+| **Total** | **265** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang

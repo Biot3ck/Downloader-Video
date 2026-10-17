@@ -26,6 +26,7 @@ backend/
   clipora_v8_worker_integration/  integrasi worker
   clipora_v8_real_guarded_e2e/    harness e2e ter-guard
   clipora_v8_formats_lab/         kandidat kebijakan format (tidak diimpor produk)
+  clipora_v8_spike/               alat Fase 0.5: uji kelayakan platform (tidak diimpor produk)
 ```
 
 Dokumentasi produk dimulai dari [backend/clipora_v8_web/README.md](backend/clipora_v8_web/README.md).

@@ -1,0 +1,25 @@
+# Daftar URL untuk spike kelayakan (Fase 0.5)
+#
+# Aturan:
+#   - Satu URL per baris. Baris diawali `#` diabaikan.
+#   - Isi 20 URL per platform, semuanya konten PUBLIK.
+#   - Jangan pakai konten privat, login-only, atau milik orang yang tidak mengizinkan.
+#   - Campur: video pendek, video panjang, carousel/slideshow, dan gambar.
+#
+# Ganti baris di bawah dengan URL sungguhan sebelum menjalankan spike.
+
+# --- TikTok (20) -----------------------------------------------------------
+# https://www.tiktok.com/@akun/video/0000000000000000000
+# https://www.tiktok.com/@akun/photo/0000000000000000000
+
+# --- Instagram (20) --------------------------------------------------------
+# https://www.instagram.com/reel/XXXXXXXXXXX/
+# https://www.instagram.com/p/XXXXXXXXXXX/
+
+# --- Pinterest (20) --------------------------------------------------------
+# https://www.pinterest.com/pin/000000000000000000/
+# https://pin.it/XXXXXXX
+
+# --- YouTube (20) ----------------------------------------------------------
+# https://www.youtube.com/watch?v=XXXXXXXXXXX
+# https://www.youtube.com/shorts/XXXXXXXXXXX

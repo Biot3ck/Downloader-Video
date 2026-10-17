@@ -30,7 +30,8 @@ jobs:
             clipora_v8_secure_egress_stage \
             clipora_v8_staging_linux \
             clipora_v8_image_backend \
-            clipora_v8_local_workflow
+            clipora_v8_local_workflow \
+            clipora_v8_spike
           do
             echo "== $pkg =="
             python -B -m unittest discover -s "$pkg" -p 'test*.py' -q

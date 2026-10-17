@@ -165,6 +165,9 @@ minggu ke-10. Bila asumsi itu salah, delapan minggu Fase 2 terbuang.
 
 ### 4.1 Yang dikerjakan
 
+Alatnya sudah ada: `backend/clipora_v8_spike/` (lihat README di dalamnya). Jalankan di host yang
+akan dipakai produksi, bukan di laptop — yang diuji adalah perilaku platform terhadap IP tersebut.
+
 1. VPS termurah (boleh free tier) dengan yt-dlp versi terbaru.
 2. 20 URL publik per platform: TikTok (video, slideshow, story), Instagram (reel, post, carousel),
    Pinterest (gambar, video pin), YouTube (video, Shorts).
