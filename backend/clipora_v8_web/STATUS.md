@@ -13,6 +13,7 @@ berbeda, yang berlaku adalah angka di sini dan hasil eksekusi tes.
 | Fitur aktif | Pengenalan link Video, Photo & Audio; format Video, Video HD, MP3 |
 | Fitur belum ada | Ekstraksi/konversi media |
 | Bloker publik terbuka | 6 (butuh host staging Linux terpisah) |
+| Jalur rilis | Disiplin enam bloker; rilis bertahap/undangan ditolak (17 Okt 2026) |
 
 ## Tes
 
@@ -28,9 +29,9 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_staging_linux` | 8 | idem |
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
-| `clipora_v8_spike` | 24 | idem (fungsi murni; tanpa jaringan) |
+| `clipora_v8_spike` | 29 | idem (fungsi murni; tanpa jaringan) |
 | JavaScript frontend | 16 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **280** | |
+| **Total** | **285** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
@@ -74,6 +75,12 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    itu bukan isi post yang ditempel; tidak ada request keluar. File demo tidak masuk image
    produksi (allowlist `FILES` di `build_image.py`), dan route-nya tidak pernah didaftarkan pada
    origin HTTPS. Gate publik tetap `503`.
+6. **Post gambar belum punya jalur ekstraksi.** Uji 12 URL (17 Okt 2026, IP rumah) menunjukkan
+   8/8 URL video terbaca, tetapi 4/4 post gambar gagal: TikTok menolak `/photo/` (`Unsupported
+   URL`), Instagram membalas `There is no video in this post`, Pinterest `No video formats
+   found!`. yt-dlp hanya menangani video, jadi halaman Photo Downloader baru menyelesaikan
+   bagian pengenalan dan tampilan — bukan pengambilan gambar. Pekerjaan ini masuk Fase 2
+   (ROADMAP 4.2.1) dan harus selesai sebelum fitur gambar dijanjikan ke pengguna.
 
 ## Patch OS tertunda
 

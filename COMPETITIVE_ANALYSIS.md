@@ -221,6 +221,10 @@ peluncuran. Karena itu urutan di roadmap harus menghasilkan sesuatu yang bisa di
 
 ## 12. Rekomendasi urutan yang lebih pendek ke publik
 
+> **Keputusan 17 Oktober 2026: tidak dipakai.** Pengguna memilih tetap disiplin enam bloker.
+> Tidak ada rilis, termasuk undangan tertutup, sebelum keenam bloker tertutup. Tabel di bawah
+> disimpan sebagai catatan alternatif yang sudah ditimbang.
+
 Alih-alih 30 minggu sebelum ada pengguna, pertimbangkan rilis bertahap:
 
 | Rilis | Isi | Prasyarat |

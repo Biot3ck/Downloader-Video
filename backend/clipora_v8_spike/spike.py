@@ -55,9 +55,12 @@ _INVALID_HINTS = (
     "private",
     "requested content is not available",
     "unable to find",
-    "no video formats found",
-    "unsupported url",
 )
+# Sengaja TIDAK masuk daftar di atas:
+#   - "Unsupported URL"      → yt-dlp tidak punya extractor untuk bentuk URL itu
+#                              (mis. TikTok /photo/). Itu keterbatasan produk, bukan URL mati.
+#   - "No video formats found" → post hidup tetapi hanya berisi gambar; pipeline kita
+#                              belum bisa mengambilnya. Juga kegagalan, bukan URL mati.
 
 # Jumlah minimum URL valid sebelum success rate dianggap cukup untuk keputusan.
 MIN_SAMPLE = 10
@@ -152,10 +155,38 @@ def _looks_watermarked(format_id: str, url: str) -> bool:
     return any(hint in haystack for hint in _WATERMARK_HINTS)
 
 
+def image_only(error: str) -> bool:
+    """Apakah kegagalan ini karena post-nya hanya berisi gambar?
+
+    Pesannya spesifik per platform, bukan tebakan: Instagram "There is no video in
+    this post", Pinterest "No video formats found!", dan TikTok menolak URL /photo/
+    karena extractornya hanya menerima /video/. Post seperti ini tidak mengukur
+    kemampuan ekstraksi video, jadi dipisahkan — bukan dihitung gagal, bukan juga
+    dihitung berhasil.
+    """
+    haystack = (error or "").lower()
+    if "there is no video in this post" in haystack or "no video formats found" in haystack:
+        return True
+    return "unsupported url" in haystack and "/photo/" in haystack
+
+
 def error_kind(error: str) -> str:
     """Pisahkan URL yang tidak bisa diuji dari kegagalan ekstraksi sungguhan."""
+    if image_only(error):
+        return "image"
     haystack = (error or "").lower()
     return "invalid" if any(hint in haystack for hint in _INVALID_HINTS) else "extraction"
+
+
+def no_media_reason(video_formats: int, image_count: int) -> str:
+    """Alasan baris tetap dianggap gagal meski metadata berhasil dibaca.
+
+    Ekstraksi yang hanya menghasilkan audio (mis. post foto TikTok lewat extractor
+    video) bukan keberhasilan bagi produk yang mengunduh video atau gambar.
+    """
+    if video_formats > 0 or image_count > 0:
+        return ""
+    return "tidak ada format video/gambar yang bisa diunduh (mungkin hanya audio)"
 
 
 @dataclass
@@ -171,6 +202,7 @@ class Result:
     max_height: int | None = None
     size_bytes: int | None = None
     format_count: int = 0
+    video_formats: int = 0
     clean_formats: int = 0
     watermark_formats: int = 0
     image_count: int = 0
@@ -208,6 +240,11 @@ def analyze(info: dict) -> dict:
 
     image_count = sum(1 for entry in entries if isinstance(entry, dict) and entry.get("ext") in {"jpg", "jpeg", "png", "webp"})
 
+    # Format audio saja (vcodec "none") tidak berguna bagi produk yang mengunduh
+    # video atau gambar. Tanpa hitungan terpisah, post foto TikTok yang hanya
+    # menghasilkan audio akan tampak "berhasil".
+    video_formats = sum(1 for f in formats if str(f.get("vcodec") or "").lower() != "none")
+
     return {
         "title": (info.get("title") or "")[:120],
         "extractor": info.get("extractor_key") or info.get("extractor") or "",
@@ -215,6 +252,7 @@ def analyze(info: dict) -> dict:
         "max_height": max(heights) if heights else None,
         "size_bytes": max(sizes) if sizes else None,
         "format_count": len(formats),
+        "video_formats": video_formats,
         "clean_formats": clean,
         "watermark_formats": marked,
         "image_count": image_count,
@@ -261,18 +299,24 @@ def _short_error(text: str) -> str:
 
 
 def success_rate(rows: list[dict]) -> dict[str, dict]:
-    """Hitung success rate per platform.
+    """Hitung success rate ekstraksi VIDEO per platform.
 
-    URL yang terbukti mati/privat (`error_kind == "invalid"`) tidak dihitung di
-    penyebut: URL itu tidak mengukur kemampuan ekstraksi, dan memasukkannya akan
-    menurunkan success rate secara palsu.
+    Dua jenis baris dikeluarkan dari penyebut:
+      - `invalid`: URL mati/privat — tidak mengukur kemampuan ekstraksi.
+      - `image`:  post hanya berisi gambar — kemampuan lain, diukur terpisah.
+    Keduanya dilaporkan supaya tidak hilang diam-diam.
     """
     summary: dict[str, dict] = {}
     for row in rows:
         platform = row.get("platform") or "unknown"
-        bucket = summary.setdefault(platform, {"total": 0, "ok": 0, "errors": {}, "skipped": 0})
-        if row.get("error_kind") == "invalid":
+        bucket = summary.setdefault(
+            platform, {"total": 0, "ok": 0, "errors": {}, "skipped": 0, "image_only": 0})
+        kind = row.get("error_kind")
+        if kind == "invalid":
             bucket["skipped"] += 1
+            continue
+        if kind == "image":
+            bucket["image_only"] += 1
             continue
         bucket["total"] += 1
         if row.get("ok"):
@@ -318,15 +362,29 @@ def render_markdown(rows: list[dict], summary: dict[str, dict], source: str, egr
     if skipped:
         detail = ", ".join(f"{name} {count}" for name, count in sorted(skipped.items()))
         lines += ["", f"**URL mati/privat, tidak dihitung:** {detail}"]
+    image_only_counts = {name: bucket.get("image_only", 0) for name, bucket in summary.items()
+                         if bucket.get("image_only")}
+    if image_only_counts:
+        detail = ", ".join(f"{name} {count}" for name, count in sorted(image_only_counts.items()))
+        lines += ["", f"**Post hanya gambar (diukur terpisah, bukan kegagalan video):** {detail}"]
     lines += ["", f"**Keputusan otomatis:** {verdict(summary)}", "", "## Kegagalan", ""]
     invalid = [row for row in rows if row.get("error_kind") == "invalid"]
-    failures = [row for row in rows if not row.get("ok") and row.get("error_kind") != "invalid"]
+    images = [row for row in rows if row.get("error_kind") == "image"]
+    failures = [row for row in rows
+                if not row.get("ok") and row.get("error_kind") not in {"invalid", "image"}]
     if not failures:
-        lines.append("Tidak ada kegagalan ekstraksi.")
+        lines.append("Tidak ada kegagalan ekstraksi video.")
     else:
         lines.append("| Platform | Alasan |")
         lines.append("| --- | --- |")
         for row in failures[:40]:
+            lines.append(f"| {row.get('platform')} | `{(row.get('error') or '')[:90]}` |")
+    if images:
+        lines += ["", "## Post hanya gambar", "",
+                  "Post ini hidup dan publik, tetapi tidak berisi video. Pipeline saat ini",
+                  "belum bisa mengambil gambarnya — itu pekerjaan terpisah, bukan angka di atas.",
+                  "", "| Platform | Alasan |", "| --- | --- |"]
+        for row in images[:40]:
             lines.append(f"| {row.get('platform')} | `{(row.get('error') or '')[:90]}` |")
     if invalid:
         lines += ["", "## URL tidak bisa diuji (mati, dihapus, atau privat)", "",
@@ -374,6 +432,11 @@ def run(urls: list[str], recheck_ok: set[str] | None = None) -> list[dict]:
                             error_kind=error_kind(error), elapsed_s=elapsed)
         else:
             result = Result(platform=platform, url=url, ok=True, elapsed_s=elapsed, **analyze(info))
+            reason = no_media_reason(result.video_formats, result.image_count)
+            if reason:
+                result.ok = False
+                result.error = reason
+                result.error_kind = "extraction"
         rows.append(result.as_row())
         status = "ok" if result.ok else "GAGAL"
         print(f"[{index}/{len(urls)}] {platform:10} {status:5} {elapsed:6.2f}s  {url[:70]}", flush=True)

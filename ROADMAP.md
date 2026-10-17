@@ -188,6 +188,22 @@ GitHub Actions memberi pembacaan awal gratis tanpa kartu kredit.
 Tabel success rate mentah per platform, tanpa diperbaiki, tanpa dibulatkan. Ini menjadi dasar
 angka target di Fase 3.
 
+### 4.2.1 Temuan awal (12 URL, 17 Oktober 2026, IP rumah — bukan keputusan)
+
+Uji bentuk URL untuk memastikan daftar tidak berisi tautan mati:
+
+- **8 dari 8 URL video terbaca** (TikTok 2, Instagram reel 2, Pinterest video pin 1, YouTube 3).
+- **4 dari 4 post gambar gagal**, masing-masing dengan pesan yang berbeda:
+  TikTok `Unsupported URL … /photo/`, Instagram `There is no video in this post`,
+  Pinterest `No video formats found!`.
+
+Artinya **unduh gambar belum punya jalur ekstraksi sama sekali**. yt-dlp hanya menangani video;
+post gambar butuh pengambilan terpisah per platform (mis. `image_post_info` TikTok, GraphQL
+Instagram, meta halaman Pinterest). Ini pekerjaan baru yang harus masuk Fase 2 sebelum fitur
+gambar boleh dijanjikan ke pengguna — dan sebelum halaman Photo Downloader dianggap selesai.
+
+Angka dari IP rumah tidak dipakai untuk kriteria 4.3; lihat README alat.
+
 ### 4.3 Kriteria berhenti (penting)
 
 | Hasil spike | Keputusan |
@@ -432,7 +448,11 @@ simulasi laporan takedown end-to-end.
 dikumpulkan. Gate tidak boleh diubah dengan mengganti konstanta; ia dibaca dari konfigurasi
 runtime yang tercatat di audit log.
 
-### 11.1 Alternatif: rilis bertahap lebih awal
+### 11.1 Alternatif yang ditolak: rilis bertahap lebih awal
+
+> **Keputusan 17 Oktober 2026: jalur ini ditolak.** Rencana utama tetap disiplin enam bloker —
+> tidak ada rilis, termasuk undangan tertutup, sebelum keenam bloker tertutup. Bagian ini
+> disimpan sebagai catatan agar keputusan tidak diulang tanpa alasan baru.
 
 Rencana di atas membuka pintu publik pada minggu 27–32. Itu lambat untuk proyek yang bersaing
 dengan pemain mapan. Alternatif yang dipertimbangkan di
@@ -448,8 +468,8 @@ dengan pemain mapan. Alternatif yang dipertimbangkan di
 
 Ini bertentangan dengan prinsip "jangan buka sebelum enam bloker tertutup". Trade-off-nya nyata:
 rilis tertutup 50 orang dengan allowlist 4 domain punya permukaan risiko jauh lebih kecil daripada
-rilis publik terbuka. Bila Anda memilih jalur ini, catat sebagai deviasi di `STATUS.md` — jangan
-diam-diam.
+rilis publik terbuka. Karena itu jalur ini **ditawarkan**, bukan diambil diam-diam. Pengguna
+memilih tetap pada jalur disiplin: tidak ada rilis lebih awal.
 
 ## 12. Jadwal usulan
 

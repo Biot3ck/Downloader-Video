@@ -5,21 +5,105 @@
 #   - Isi 20 URL per platform, semuanya konten PUBLIK.
 #   - Jangan pakai konten privat, login-only, atau milik orang yang tidak mengizinkan.
 #   - Campur: video pendek, video panjang, carousel/slideshow, dan gambar.
+#   - Post yang hanya berisi gambar dilaporkan terpisah dan tidak masuk penyebut
+#     success rate video; lihat README bagian "Post hanya gambar".
 #
-# Ganti baris di bawah dengan URL sungguhan sebelum menjalankan spike.
+# Sumber daftar ini (dikumpulkan 17 Oktober 2026 oleh agen):
+#   - TikTok: profil @tiktok (video) + tag #photo / #tiktokphoto (post foto).
+#   - Instagram: profil @instagram, @nasa, @natgeo.
+#   - Pinterest: pin publik hasil pencarian web (beberapa di subdomain regional).
+#   - YouTube: kanal resmi @YouTube.
+# Semua akun adalah akun resmi/korporat, bukan akun pribadi pengguna.
+# Post bisa hilang atau dihapus kapan saja; baris seperti itu dipisahkan alat
+# sebagai "URL tidak bisa diuji" dan tidak menurunkan success rate.
+#
+# Periksa kelengkapan tanpa jaringan:
+#   python -B -m clipora_v8_spike.spike --urls urls.txt --audit-only
 
-# --- TikTok (20) -----------------------------------------------------------
-# https://www.tiktok.com/@akun/video/0000000000000000000
-# https://www.tiktok.com/@akun/photo/0000000000000000000
+# --- TikTok (20: 14 video + 6 post foto) ------------------------------------
+https://www.tiktok.com/@tiktok/video/7694797676306615583
+https://www.tiktok.com/@tiktok/video/7693184538704416031
+https://www.tiktok.com/@tiktok/video/7692114317151423775
+https://www.tiktok.com/@tiktok/video/7691450773619625247
+https://www.tiktok.com/@tiktok/video/7691013160425327903
+https://www.tiktok.com/@tiktok/video/7689568478570843422
+https://www.tiktok.com/@tiktok/video/7688834577418194206
+https://www.tiktok.com/@tiktok/video/7686945827008433439
+https://www.tiktok.com/@tiktok/video/7683195368279985438
+https://www.tiktok.com/@tiktok/video/7681695065927912735
+https://www.tiktok.com/@tiktok/video/7681414892942839071
+https://www.tiktok.com/@tiktok/video/7681309378095353118
+https://www.tiktok.com/@tiktok/video/7680996287877008670
+https://www.tiktok.com/@tiktok/video/7680721699171601694
+https://www.tiktok.com/@catphotovideo0/photo/7690397576977206536
+https://www.tiktok.com/@fn.edit3/photo/7654963347779046678
+https://www.tiktok.com/@kingsback999/photo/7630359164493073685
+https://www.tiktok.com/@ayudiwidiaa/photo/7371631374165495046
+https://www.tiktok.com/@novelistic0986/photo/7609637102170426631
+https://www.tiktok.com/@adon.design/photo/7627183132134886677
 
-# --- Instagram (20) --------------------------------------------------------
-# https://www.instagram.com/reel/XXXXXXXXXXX/
-# https://www.instagram.com/p/XXXXXXXXXXX/
+# --- Instagram (20: reel + post gambar/carousel) ----------------------------
+https://www.instagram.com/reel/DeewiSPpCrm/
+https://www.instagram.com/reel/DecLR_vvrW6/
+https://www.instagram.com/reel/DePb6WLuVae/
+https://www.instagram.com/reel/DeM-xDCA2W5/
+https://www.instagram.com/reel/DeKPYgBhbUz/
+https://www.instagram.com/reel/Dd9RyBWBVih/
+https://www.instagram.com/reel/Dd7CJkhPvHf/
+https://www.instagram.com/reel/Dd6t2AbOPt_/
+https://www.instagram.com/reel/DeTUk4sDSp-/
+https://www.instagram.com/p/DeJ28eTxo4s/
+https://www.instagram.com/p/DeAYvsnn4la/
+https://www.instagram.com/p/Dejxav7l58q/
+https://www.instagram.com/p/DehUTymF6VL/
+https://www.instagram.com/p/DeelvcCF53n/
+https://www.instagram.com/p/DeclSZmF_7I/
+https://www.instagram.com/p/DeaMlUSEpgs/
+https://www.instagram.com/reel/DehZj9wggt0/
+https://www.instagram.com/reel/DecPSQfoaRe/
+https://www.instagram.com/reel/Delg3cUktih/
+https://www.instagram.com/p/DekS-u4GltE/
 
-# --- Pinterest (20) --------------------------------------------------------
-# https://www.pinterest.com/pin/000000000000000000/
-# https://pin.it/XXXXXXX
+# --- Pinterest (20: pin gambar dan pin video) -------------------------------
+https://www.pinterest.com/pin/2392606047526589/
+https://www.pinterest.com/pin/146367056616629683/
+https://www.pinterest.com/pin/383650462024880754/
+https://www.pinterest.com/pin/115334440443527182/
+https://uk.pinterest.com/pin/441493569725436722/
+https://fr.pinterest.com/pin/50032245855344584/
+https://www.pinterest.com/pin/682084306057042981/
+https://fr.pinterest.com/pin/199988039698401997/
+https://www.pinterest.com/pin/419538521513355200/
+https://www.pinterest.com/pin/120189883778812149/
+https://uk.pinterest.com/pin/493988652855051265/
+https://www.pinterest.com/pin/60869032439076027/
+https://www.pinterest.com/pin/2392606022009558/
+https://cl.pinterest.com/pin/419116309093432312/
+https://ca.pinterest.com/pin/20618110789007202/
+https://www.pinterest.com/pin/185280972166900017/
+https://ph.pinterest.com/pin/355151120616744465/
+https://www.pinterest.com/pin/231653974578077954/
+https://www.pinterest.com/pin/189714203048275892/
+https://www.pinterest.com/pin/15340454965182808/
 
-# --- YouTube (20) ----------------------------------------------------------
-# https://www.youtube.com/watch?v=XXXXXXXXXXX
-# https://www.youtube.com/shorts/XXXXXXXXXXX
+# --- YouTube (20: video biasa; durasi bervariasi) ---------------------------
+https://www.youtube.com/watch?v=71ya_JC_IbM
+https://www.youtube.com/watch?v=pRrmQUm6Zvg
+https://www.youtube.com/watch?v=wGA27zJEnaU
+https://www.youtube.com/watch?v=NDHk8bGGq74
+https://www.youtube.com/watch?v=FNoK3gc-Jk0
+https://www.youtube.com/watch?v=YhwVjWzH5x8
+https://www.youtube.com/watch?v=zc87_hodp2g
+https://www.youtube.com/watch?v=C0H9gGqAGxo
+https://www.youtube.com/watch?v=YsCJlIYl5Kc
+https://www.youtube.com/watch?v=n_G4dQMKYN0
+https://www.youtube.com/watch?v=qAyZIVQrC_Y
+https://www.youtube.com/watch?v=wNJ4r2WsUMI
+https://www.youtube.com/watch?v=iOhT9MKc7lo
+https://www.youtube.com/watch?v=6YMh40vQSgU
+https://www.youtube.com/watch?v=Bu_N_Bk7nDY
+https://www.youtube.com/watch?v=tOOPydwQ5fI
+https://www.youtube.com/watch?v=BLelz0cH7M8
+https://www.youtube.com/watch?v=jcHvPmTTirU
+https://www.youtube.com/watch?v=7ieIyBE9g7A
+https://www.youtube.com/watch?v=eGGUmoxvdAM

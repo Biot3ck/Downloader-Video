@@ -65,9 +65,9 @@ Hasil masuk ke `hasil/`. **Jangan pakai angka dari sini untuk keputusan.**
 
 ## Yang dicatat
 
-Per URL: berhasil/gagal, alasan gagal, jenis gagal (`extraction` atau `invalid`), tinggi maksimum,
-ukuran file, jumlah format kandidat tanpa watermark, jumlah format ber-watermark, apakah post
-berupa slideshow, dan durasi eksekusi.
+Per URL: berhasil/gagal, alasan gagal, jenis gagal (`extraction`, `invalid`, atau `image`),
+tinggi maksimum, ukuran file, jumlah format kandidat tanpa watermark, jumlah format
+ber-watermark, apakah post berupa slideshow, dan durasi eksekusi.
 
 Kolom "format bersih" adalah **petunjuk, bukan bukti**. Nama format bisa berubah antar versi
 API. Verifikasi visual tetap perlu: buka file hasil unduhan dan lihat sendiri.
@@ -92,10 +92,34 @@ Tanpa pemisahan ini, satu URL mati bisa menurunkan angka dan memicu vonis `STOP`
 Kalau laporan menyebut `URL mati/privat, tidak dihitung`, ganti URL tersebut dengan URL publik
 lain lalu jalankan ulang — jangan menaikkan angka secara manual.
 
+### Post hanya gambar dipisahkan
+
+yt-dlp adalah ekstraktor video. Post yang hanya berisi gambar gagal di ketiga platform,
+masing-masing dengan pesan berbeda:
+
+| Platform | Pesan | Arti |
+| --- | --- | --- |
+| TikTok | `Unsupported URL … /photo/` | extractor hanya menerima `/video/` |
+| Instagram | `There is no video in this post` | post gambar atau carousel |
+| Pinterest | `No video formats found!` | pin gambar |
+
+Baris seperti ini masuk bagian **Post hanya gambar** dan tidak masuk penyebut success rate
+video. Ini bukan berarti aman: artinya fitur unduh gambar **belum punya jalur ekstraksi
+sama sekali** lewat yt-dlp. Jangan janjikan unduh gambar ke pengguna sebelum ada jalur
+terpisah yang diuji sendiri.
+
+### Angka dari IP rumah bukan keputusan
+
+Menjalankan alat ini dari Mac hanya berguna untuk memastikan URL masih hidup dan bentuk
+URL-nya benar. Platform membalas berbeda terhadap IP residensial dan IP datacenter, jadi
+angka success rate dari rumah tidak boleh dipakai untuk kriteria berhenti.
+
 ## Batasan
 
 - Tidak mengunduh media; hanya membaca metadata. Bandwidth hampir nol.
 - Tidak menguji kualitas hasil konversi MP3 atau penggabungan slideshow → MP4.
+- Tidak menguji unduhan **gambar**: yt-dlp menolak post gambar di ketiga platform (lihat
+  bagian "Post hanya gambar"). Kemampuan itu perlu alat uji sendiri.
 - Tidak menguji batas laju jangka panjang. Untuk itu, jalankan ulang beberapa kali dalam sehari.
 - Tes otomatis (`test_spike.py`) hanya menguji fungsi murni; tidak ada akses jaringan di CI.
 - Versi yt-dlp dipin (`2026.08.19`) supaya hasil antar-jalan bisa dibandingkan. Naikkan versi

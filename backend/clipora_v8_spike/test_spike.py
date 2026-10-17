@@ -12,6 +12,7 @@ from clipora_v8_spike.spike import (
     classify,
     egress_warning,
     error_kind,
+    no_media_reason,
     read_ok_urls,
     read_urls,
     render_markdown,
@@ -71,6 +72,20 @@ class AnalyzeTests(unittest.TestCase):
         self.assertEqual(result["size_bytes"], 2000)
         self.assertEqual(result["watermark_formats"], 1)
         self.assertEqual(result["clean_formats"], 2)
+        self.assertEqual(result["video_formats"], 2)
+
+    def test_audio_only_extraction_is_not_usable_media(self) -> None:
+        info = {"extractor_key": "TikTok", "formats": [{"format_id": "audio", "vcodec": "none"}]}
+        result = analyze(info)
+        self.assertEqual(result["video_formats"], 0)
+        self.assertEqual(result["image_count"], 0)
+        self.assertIn("tidak ada format video/gambar", no_media_reason(
+            result["video_formats"], result["image_count"]))
+
+    def test_usable_media_needs_video_or_image(self) -> None:
+        self.assertEqual(no_media_reason(3, 0), "")
+        self.assertEqual(no_media_reason(0, 2), "")
+        self.assertNotEqual(no_media_reason(0, 0), "")
 
     def test_handles_missing_formats(self) -> None:
         result = analyze({"title": "x"})
@@ -157,6 +172,13 @@ class ErrorKindTests(unittest.TestCase):
             with self.subTest(error=error):
                 self.assertEqual(error_kind(error), "extraction")
 
+    def test_image_only_posts_are_their_own_category(self) -> None:
+        for error in ("ERROR: [Instagram] X: There is no video in this post",
+                      "ERROR: [Pinterest] 123: No video formats found!; please report this issue",
+                      "ERROR: Unsupported URL: https://www.tiktok.com/@u/photo/1"):
+            with self.subTest(error=error):
+                self.assertEqual(error_kind(error), "image")
+
     def test_success_rate_ignores_dead_urls(self) -> None:
         rows = [
             {"platform": "tiktok", "ok": True},
@@ -170,6 +192,17 @@ class ErrorKindTests(unittest.TestCase):
         self.assertEqual(summary["tiktok"]["total"], 3)
         self.assertEqual(summary["tiktok"]["skipped"], 1)
         self.assertEqual(summary["tiktok"]["rate"], 66.7)
+
+    def test_success_rate_measures_video_only(self) -> None:
+        rows = [
+            {"platform": "tiktok", "ok": True},
+            {"platform": "tiktok", "ok": False, "error": "There is no video in this post",
+             "error_kind": "image"},
+        ]
+        summary = success_rate(rows)
+        self.assertEqual(summary["tiktok"]["total"], 1)
+        self.assertEqual(summary["tiktok"]["image_only"], 1)
+        self.assertEqual(summary["tiktok"]["rate"], 100.0)
 
     def test_verdict_refuses_a_sample_that_is_too_small(self) -> None:
         summary = {"tiktok": {"total": 3, "ok": 3, "rate": 100.0, "skipped": 0}}
@@ -186,7 +219,19 @@ class ErrorKindTests(unittest.TestCase):
         self.assertIn("URL mati/privat, tidak dihitung", text)
         self.assertIn("tiktok 1", text)
         self.assertIn("URL tidak bisa diuji", text)
-        self.assertIn("Tidak ada kegagalan ekstraksi.", text)
+        self.assertIn("Tidak ada kegagalan ekstraksi video.", text)
+
+    def test_markdown_reports_image_posts_separately(self) -> None:
+        rows = [
+            {"platform": "tiktok", "ok": True},
+            {"platform": "pinterest", "ok": False, "error": "No video formats found!",
+             "error_kind": "image"},
+        ]
+        text = render_markdown(rows, success_rate(rows), "uji.csv")
+        self.assertIn("Post hanya gambar (diukur terpisah, bukan kegagalan video)", text)
+        self.assertIn("pinterest 1", text)
+        self.assertIn("## Post hanya gambar", text)
+        self.assertNotIn("pinterest | `No video formats found!", text.split("## Post hanya gambar")[0])
 
 
 class AuditTests(unittest.TestCase):
