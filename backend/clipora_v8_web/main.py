@@ -100,7 +100,9 @@ class Boundary:
 def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample_enabled=False):
     validate_origin(origin)
     app = FastAPI(title='Clipora staging', docs_url=None, redoc_url=None, openapi_url=None)
-    app.add_middleware(Boundary, origin=origin, limiter=Limiter(state_dir or BASE.parent / 'clipora_v8_web_runtime'))
+    limiter=Limiter(state_dir or BASE.parent / 'clipora_v8_web_runtime')
+    app.state.admission_limiter=limiter
+    app.add_middleware(Boundary, origin=origin, limiter=limiter)
     @app.get('/healthz')
     def health():
         return {'status': 'ok', 'public_downloads_enabled': False, 'ready_for_public_launch': False}

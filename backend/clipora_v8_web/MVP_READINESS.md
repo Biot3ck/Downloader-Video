@@ -1,5 +1,7 @@
 # Rencana release Clipora MVP
 
+Status review terbaru: [RELEASE_SECURITY.md](RELEASE_SECURITY.md). Pemeriksaan lokal dan hardening storage admission sudah dilakukan; keamanan publik belum disetujui. Linux staging terpisah belum tersedia, VM tetap tidak dipasang, unduhan publik tetap nonaktif. Bagian milestone di bawah adalah riwayat perkembangan; UI produk saat ini memakai empat menu tanpa file picker/sampel, dengan preferensi Video/HD/MP3 yang belum aktif.
+
 Target pengguna: unduhan video publik YouTube, TikTok, Instagram, dan Pinterest. Model hybrid: browser menangani preview/save lokal; backend menangani ekstraksi metadata, pemilihan media, dan merge bila dibutuhkan. Tidak menjanjikan akses browser langsung ke CDN sebelum CORS, expiry URL, dan ketergantungan cookie/header diuji. Tidak menjanjikan penghapusan watermark dari piksel video. Dukungan video privat/login/DRM bukan bagian kandidat MVP ini.
 
 ## Status yang sudah terbukti

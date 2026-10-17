@@ -24,6 +24,13 @@ class OwnedAPITests(unittest.TestCase):
         self.assertEqual(self.b.get(self.path).json(),self.b.get('/api/v8/jobs/'+'f'*32).json())
         self.assertEqual(self.b.post(self.path+'/cancel',headers={'Origin':ORIGIN}).status_code,404)
         self.assertEqual(self.a.post(self.path+'/cancel',headers={'Origin':ORIGIN}).status_code,204)
+    def test_fresh_state_root_created_private_before_nested_artifacts(self):
+        state=self.root/'fresh'
+        app=create_owned_app(ORIGIN,state,state/'artifacts')
+        for path in (state,state/'owned-public',state/'artifacts'):
+            self.assertEqual(path.stat().st_mode & 0o777,0o700)
+        client=TestClient(app,base_url=ORIGIN)
+        self.assertEqual(client.post('/api/v8/session',headers={'Origin':ORIGIN}).status_code,204)
     def test_file_authorization_precedes_filesystem_access(self):
         with patch('clipora_v8_web.owned_api.PinnedVideoResponse',side_effect=AssertionError('Foreign owner touched filesystem')):
             self.assertEqual(self.b.get(self.path+'/file').status_code,404)

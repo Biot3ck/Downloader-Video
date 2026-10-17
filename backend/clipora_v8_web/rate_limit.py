@@ -9,6 +9,7 @@ import hmac
 import os
 from pathlib import Path
 import sqlite3
+import stat
 import threading
 import time
 
@@ -21,7 +22,7 @@ class Limiter:
     def __init__(self, directory, per_client=20, total=120, period=60):
         if not (1 <= per_client <= total <= 1000 and 1 <= period <= 3600):
             raise ValueError('Invalid rate limits')
-        self.directory = Path(directory)
+        self.directory = Path(directory).absolute()
         self.path = self.directory / 'admission.sqlite3'
         self.per_client, self.total, self.period = per_client, total, period
         self.initialized = False
@@ -29,6 +30,10 @@ class Limiter:
 
     @contextmanager
     def connection(self):
+        self.validate_directory()
+        # A private directory is required for SQLite's pathname-based journal
+        # operations. Reject replacement links/files again on every connection.
+        self.validate_database(self.path.lstat())
         db = sqlite3.connect(self.path, timeout=.2, isolation_level=None)
         try:
             db.execute('PRAGMA busy_timeout=200')
@@ -36,13 +41,32 @@ class Limiter:
             yield db
         finally:db.close()
 
+    def validate_directory(self):
+        if any(p.is_symlink() for p in (self.directory,*self.directory.parents)):
+            raise ValueError('State path symlink rejected')
+        info=self.directory.stat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.getuid()
+                or stat.S_IMODE(info.st_mode)!=0o700):
+            raise ValueError('Private owned state directory required')
+
+    @staticmethod
+    def validate_database(info):
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid()
+                or stat.S_IMODE(info.st_mode)!=0o600 or info.st_nlink!=1):
+            raise ValueError('Private regular database required')
+
     def initialize(self):
         with self.lock:
             if self.initialized:return
+            # Check existing ancestors before mkdir so a symlink cannot redirect
+            # creation into another directory. Never repair/chmod foreign data.
+            if any(p.is_symlink() for p in (self.directory,*self.directory.parents)):
+                raise ValueError('State path symlink rejected')
             self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-            if self.directory.is_symlink():raise ValueError('State directory symlink rejected')
-            fd = os.open(self.path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-            os.close(fd)
+            self.validate_directory()
+            fd = os.open(self.path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+            try:self.validate_database(os.fstat(fd))
+            finally:os.close(fd)
             with self.connection() as db:
                 db.execute('PRAGMA journal_mode=DELETE')
                 if db.execute('PRAGMA page_size').fetchone()[0] != 4096:

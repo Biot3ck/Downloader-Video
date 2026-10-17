@@ -1,6 +1,7 @@
 import asyncio
 import unittest
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from clipora_v8_web.main import Boundary, create_app, validate_origin
@@ -13,7 +14,7 @@ class WebTests(unittest.TestCase):
     def setUp(self):
         self.state=tempfile.TemporaryDirectory(prefix='clipora-web-test-')
         self.addCleanup(self.state.cleanup)
-        self.client=TestClient(create_app(ORIGIN,self.state.name),base_url=ORIGIN)
+        self.client=TestClient(create_app(ORIGIN,Path(self.state.name).resolve()),base_url=ORIGIN)
     def test_only_product_surface(self):
         for path in ('/', '/app', '/assets/app.js', '/assets/style.css'):
             response=self.client.get(path)

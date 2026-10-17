@@ -1,5 +1,6 @@
 """Image-mode request boundaries. No extractor or internet access is enabled."""
 import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
@@ -13,7 +14,7 @@ class ImageModeTests(unittest.TestCase):
     def setUp(self):
         self.directory=tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
-        self.client=TestClient(create_app(ORIGIN,self.directory.name),base_url=ORIGIN)
+        self.client=TestClient(create_app(ORIGIN,Path(self.directory.name).resolve()),base_url=ORIGIN)
 
     def validate(self,payload):
         return self.client.post('/api/v8/validate',json=payload,headers={'Origin':ORIGIN})

@@ -18,10 +18,13 @@ def create_owned_app(origin,state_dir,artifact_dir,*,offline_sample_enabled=Fals
     cookie='__Host-clipora-session' if secure else 'clipora_session'
     root=Path(artifact_dir).absolute()
     if any(p.is_symlink() for p in (root,*root.parents)):raise ValueError('Artifact directory symlink rejected')
+    app=create_app(origin,state_dir,offline_sample_enabled=offline_sample_enabled)
+    # Create/check state before either artifact or queue child directories.
+    # Otherwise mkdir(parents=True) implicitly creates a 0755 state root.
+    app.state.admission_limiter.initialize()
     root.mkdir(parents=True,exist_ok=True,mode=0o700)
     root.chmod(0o700)
     store=OwnedJobs(state_dir)
-    app=create_app(origin,state_dir,offline_sample_enabled=offline_sample_enabled)
     # Testing/internal scheduler access; this is not an HTTP authorization path.
     app.state.owned_jobs=store
 

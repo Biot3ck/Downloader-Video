@@ -1,5 +1,6 @@
 """Product/developer separation and supported-feature boundaries."""
 from html.parser import HTMLParser
+from pathlib import Path
 import tempfile
 import unittest
 from fastapi.testclient import TestClient
@@ -22,7 +23,7 @@ class FrontendNavigationTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
     def client(self,origin=ORIGIN,enabled=False):
-        return TestClient(create_app(origin,self.temp.name,offline_sample_enabled=enabled),base_url=origin)
+        return TestClient(create_app(origin,Path(self.temp.name).resolve(),offline_sample_enabled=enabled),base_url=origin)
     def test_four_feature_navigation_without_fixture_or_device_controls(self):
         for enabled in (False,True):
             text=self.client(enabled=enabled).get('/').text;page=Markup(text)
