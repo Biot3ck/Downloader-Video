@@ -13,6 +13,7 @@ from clipora_v8_spike.spike import (
     egress_warning,
     error_kind,
     no_media_reason,
+    probe_command,
     read_ok_urls,
     read_urls,
     render_markdown,
@@ -264,6 +265,24 @@ class EgressWarningTests(unittest.TestCase):
 
     def test_public_ip_is_silent(self) -> None:
         self.assertEqual(egress_warning("203.0.113.9"), "")
+
+
+class ProbeCommandTests(unittest.TestCase):
+    def test_default_command_puts_the_url_last(self) -> None:
+        cmd = probe_command("https://example.test/x")
+        self.assertEqual(cmd[-1], "https://example.test/x")
+        self.assertNotIn("--impersonate", cmd)
+        self.assertNotIn("--cookies", cmd)
+
+    def test_impersonation_is_passed_before_the_url(self) -> None:
+        cmd = probe_command("https://example.test/x", impersonate="chrome")
+        self.assertEqual(cmd[-1], "https://example.test/x")
+        self.assertEqual(cmd[cmd.index("--impersonate") + 1], "chrome")
+
+    def test_cookies_are_passed_before_the_url(self) -> None:
+        cmd = probe_command("https://example.test/x", cookies=Path("/tmp/c.txt"))
+        self.assertEqual(cmd[-1], "https://example.test/x")
+        self.assertEqual(cmd[cmd.index("--cookies") + 1], "/tmp/c.txt")
 
 
 class CsvRoundTripTests(unittest.TestCase):

@@ -18,6 +18,10 @@ on:
         description: 'Versi yt-dlp yang dipin'
         required: false
         default: '2026.08.19'
+      impersonate:
+        description: 'Tiru fingerprint TLS browser (mis. chrome). Kosongkan untuk mode default. Butuh curl_cffi.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -35,7 +39,11 @@ jobs:
           python-version: '3.13'
 
       - name: Install yt-dlp
-        run: python -m pip install --disable-pip-version-check "yt-dlp==${{ inputs.yt_dlp_version || '2026.08.19' }}"
+        run: |
+          python -m pip install --disable-pip-version-check "yt-dlp==${{ inputs.yt_dlp_version || '2026.08.19' }}"
+          if [ -n "${{ inputs.impersonate }}" ]; then
+            python -m pip install --disable-pip-version-check "curl_cffi>=0.5.10"
+          fi
 
       - name: Pastikan daftar URL terisi
         working-directory: backend/clipora_v8_spike
@@ -47,10 +55,14 @@ jobs:
 
       - name: Jalankan spike
         working-directory: backend
+        env:
+          IMPERSONATE: ${{ inputs.impersonate }}
         run: |
-          python -B -m clipora_v8_spike.spike \
-            --urls clipora_v8_spike/urls.txt \
-            --out ../hasil-spike.csv
+          args=(--urls clipora_v8_spike/urls.txt --out ../hasil-spike.csv)
+          if [ -n "$IMPERSONATE" ]; then
+            args+=(--impersonate "$IMPERSONATE")
+          fi
+          python -B -m clipora_v8_spike.spike "${args[@]}"
 
       - name: Tampilkan ringkasan
         run: cat hasil-spike.md

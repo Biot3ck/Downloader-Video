@@ -261,8 +261,14 @@ def analyze(info: dict) -> dict:
     }
 
 
-def probe(url: str, timeout_s: int = 45) -> tuple[dict | None, str]:
-    """Jalankan yt-dlp dan kembalikan (metadata, pesan galat). Tidak mengunduh media."""
+def probe_command(url: str, impersonate: str | None = None,
+                  cookies: Path | None = None) -> list[str]:
+    """Susun perintah yt-dlp untuk satu URL.
+
+    `--impersonate` meniru fingerprint TLS browser. Ini penting untuk TikTok:
+    tanpa itu, permintaan dari IP datacenter dijawab halaman anti-bot dan
+    yt-dlp melaporkan "Unexpected response from webpage request".
+    """
     cmd = [
         sys.executable,
         "-B",
@@ -275,8 +281,19 @@ def probe(url: str, timeout_s: int = 45) -> tuple[dict | None, str]:
         "1",
         "--socket-timeout",
         "20",
-        url,
     ]
+    if impersonate:
+        cmd += ["--impersonate", impersonate]
+    if cookies:
+        cmd += ["--cookies", str(cookies)]
+    cmd.append(url)
+    return cmd
+
+
+def probe(url: str, timeout_s: int = 45, impersonate: str | None = None,
+          cookies: Path | None = None) -> tuple[dict | None, str]:
+    """Jalankan yt-dlp dan kembalikan (metadata, pesan galat). Tidak mengunduh media."""
+    cmd = probe_command(url, impersonate=impersonate, cookies=cookies)
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
     except subprocess.TimeoutExpired:
@@ -347,9 +364,12 @@ def verdict(summary: dict[str, dict]) -> str:
     return "LANJUT BERSYARAT: angka belum memenuhi ambang penuh, lihat tabel."
 
 
-def render_markdown(rows: list[dict], summary: dict[str, dict], source: str, egress: str = "unknown") -> str:
+def render_markdown(rows: list[dict], summary: dict[str, dict], source: str,
+                    egress: str = "unknown", mode: str = "") -> str:
     lines = [f"# Hasil spike kelayakan — {source}", ""]
     lines.append(f"**IP keluar:** `{egress}`")
+    if mode:
+        lines.append(f"**Mode yt-dlp:** {mode}")
     warning = egress_warning(egress)
     if warning:
         lines += ["", f"> **PERINGATAN:** {warning}"]
@@ -410,7 +430,8 @@ def render_markdown(rows: list[dict], summary: dict[str, dict], source: str, egr
     return "\n".join(lines)
 
 
-def run(urls: list[str], recheck_ok: set[str] | None = None) -> list[dict]:
+def run(urls: list[str], recheck_ok: set[str] | None = None,
+        impersonate: str | None = None, cookies: Path | None = None) -> list[dict]:
     import time
 
     rows: list[dict] = []
@@ -425,7 +446,7 @@ def run(urls: list[str], recheck_ok: set[str] | None = None) -> list[dict]:
             print(f"[{index}/{len(urls)}] {platform:10} LEWAT {url[:70]}", flush=True)
             continue
         started = time.monotonic()
-        info, error = probe(url)
+        info, error = probe(url, impersonate=impersonate, cookies=cookies)
         elapsed = round(time.monotonic() - started, 2)
         if info is None:
             result = Result(platform=platform, url=url, ok=False, error=error,
@@ -463,6 +484,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--urls", type=Path, help="berkas daftar URL")
     parser.add_argument("--out", type=Path, help="berkas CSV hasil")
     parser.add_argument("--recheck", type=Path, help="CSV sebelumnya; hanya URL yang berhasil diuji ulang")
+    parser.add_argument("--impersonate", metavar="TARGET",
+                        help="tiru fingerprint TLS browser, mis. 'chrome' (butuh curl_cffi). "
+                             "Wajib dicoba bila platform menolak IP datacenter.")
+    parser.add_argument("--cookies", type=Path, help="berkas cookies Netscape untuk yt-dlp")
     parser.add_argument("--egress-only", action="store_true", help="hanya laporkan IP keluar lalu keluar")
     parser.add_argument("--audit-only", action="store_true",
                         help="periksa komposisi --urls tanpa akses jaringan")
@@ -505,11 +530,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"PERINGATAN: {warning}", file=sys.stderr)
 
     recheck_ok = read_ok_urls(args.recheck) if args.recheck else None
-    rows = run(urls, recheck_ok)
+    if args.cookies and not args.cookies.is_file():
+        print(f"berkas cookies tidak ditemukan: {args.cookies}", file=sys.stderr)
+        return 1
+    mode = "default"
+    if args.impersonate:
+        mode = f"`--impersonate {args.impersonate}`"
+    if args.cookies:
+        mode += " + cookies"
+    print(f"Mode yt-dlp: {mode}")
+    rows = run(urls, recheck_ok, impersonate=args.impersonate, cookies=args.cookies)
     write_csv(rows, args.out)
 
     summary = success_rate(rows)
-    markdown = render_markdown(rows, summary, args.out.name, egress)
+    markdown = render_markdown(rows, summary, args.out.name, egress, mode)
     report = args.out.with_suffix(".md")
     report.write_text(markdown, encoding="utf-8")
 
