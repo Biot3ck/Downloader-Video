@@ -13,6 +13,16 @@ const result=document.getElementById('result'),resultTitle=document.getElementBy
 const links=document.querySelectorAll('.navigation [data-view]');
 let currentView=null,controller=null,revision=0;
 const drafts={video:'',photo:''};
+const formatNotes={
+  video:'Video downloads are not available yet. Your selection only sets a preference; Check link recognizes the platform.',
+  hd:'HD will use a higher-resolution source only when available. HD downloads and ad unlock are not available yet.',
+  mp3:'MP3 audio extraction is not available yet. Check link only recognizes the video platform; it does not extract audio.'
+};
+for(const [format,note] of Object.entries(formatNotes)){
+  document.getElementById('format-'+format).addEventListener('change',()=>{
+    resetCheck();document.getElementById('format-note').textContent=note;
+  });
+}
 function showResult(title,description,isError=false){
   resultTitle.textContent=title;resultDescription.textContent=description;result.classList.toggle('error',isError);result.hidden=false;
 }
@@ -32,6 +42,7 @@ function navigate(focus=false){
   document.getElementById('hero-line').textContent=view.line;document.getElementById('hero-accent').textContent=view.accent;
   document.getElementById('hero-description').textContent=view.description;document.title=view.label+' · Clipora';
   document.getElementById('link-view').hidden=!view.kind;
+  document.getElementById('video-formats').hidden=next!=='video';
   document.getElementById('audio-view').hidden=next!=='audio';document.getElementById('history-view').hidden=next!=='history';
   result.hidden=true;form.removeAttribute('aria-busy');
   if(view.kind){

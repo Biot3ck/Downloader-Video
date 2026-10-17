@@ -79,3 +79,17 @@ test('supported validation errors retain the actual API guidance',async()=>{
   await done;
   assert.equal(ui.get('result-description').textContent,'Use a YouTube, TikTok, Instagram, or Pinterest post link.');
 });
+test('HD and MP3 preferences do not submit downloads or invented API fields',async()=>{
+  const ui=setup();
+  for(const format of ['hd','mp3']){
+    ui.get('format-'+format).emit('change');
+    assert.equal(ui.requests.length,format==='hd'?0:1);
+    assert.ok(ui.get('format-note').textContent.includes('not available yet'));
+    const done=ui.submit(),request=ui.requests.at(-1);
+    assert.equal(request.url,'/api/v8/validate');
+    assert.deepEqual(JSON.parse(request.options.body),{url:'',media_kind:'video'});
+    respond(request);await done;
+  }
+  ui.navigate('photo');assert.equal(ui.get('video-formats').hidden,true);
+  ui.navigate('video');assert.equal(ui.get('video-formats').hidden,false);
+});

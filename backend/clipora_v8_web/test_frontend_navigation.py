@@ -35,7 +35,7 @@ class FrontendNavigationTests(unittest.TestCase):
         self.assertIn('audio-url',page.disabled)
         self.assertIn('button',page.disabled)
         self.assertIn("History isn't available yet",text)
-        self.assertNotIn('MP3',text)
+        self.assertIn('MP3',text)  # Preference in Video; extraction remains disabled.
         self.assertNotIn('320 kbps',text)
     def test_default_product_does_not_serve_developer_or_archived_code(self):
         client=self.client()

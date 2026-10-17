@@ -4,6 +4,8 @@ Frontend memakai HTML/CSS/JavaScript dan FastAPI yang sudah ada. Identitas Clipo
 
 Lihat [UI_RESTRUCTURE.md](UI_RESTRUCTURE.md) untuk audit, branch/checkpoint, file yang berubah, pengujian responsif dan keterbatasan.
 
+Halaman Video juga menyediakan preferensi Video, Video HD dan MP3 dengan status belum tersedia. Check link tetap hanya mengenali platform; tidak memulai download/konversi atau iklan. Rancangan kualitas asli dan rewarded ads ada di [VIDEO_FORMATS.md](VIDEO_FORMATS.md).
+
 ## Preview lokal
 
 Dari backend:
