@@ -1,0 +1,48 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python suites
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.15'
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+      - name: Run unittest suites
+        working-directory: backend
+        run: |
+          set -e
+          for pkg in \
+            clipora_v8_web \
+            clipora_v8_formats_lab \
+            clipora_v8_firewall_candidate \
+            clipora_v8_verified_tls \
+            clipora_v8_secure_egress_stage \
+            clipora_v8_staging_linux \
+            clipora_v8_image_backend \
+            clipora_v8_local_workflow
+          do
+            echo "== $pkg =="
+            python -B -m unittest discover -s "$pkg" -p 'test*.py' -q
+          done
+
+  frontend:
+    name: Frontend logic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run frontend tests
+        run: node backend/clipora_v8_web/test_frontend_async.cjs

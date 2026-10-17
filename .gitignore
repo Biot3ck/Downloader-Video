@@ -1,0 +1,20 @@
+# Runtime
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local state and runtime output
+*_runtime/
+*.sqlite3
+*.sqlite3-*
+*.db
+.env
+.env.*
+
+# Generated downloads and test output
+downloads/
+*-test-output/
+test-output/
+
+# OS noise
+.DS_Store
