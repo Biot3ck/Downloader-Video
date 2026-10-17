@@ -20,7 +20,7 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 
 | Paket | Jumlah | Perintah |
 | --- | ---: | --- |
-| `clipora_v8_web` | 81 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
+| `clipora_v8_web` | 89 | `.venv/bin/python -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q` |
 | `clipora_v8_formats_lab` | 8 | idem, ganti direktori |
 | `clipora_v8_firewall_candidate` | 46 | idem |
 | `clipora_v8_verified_tls` | 35 | idem |
@@ -28,8 +28,8 @@ Dijalankan dari direktori `backend` dengan Python 3.15 pada image lokal:
 | `clipora_v8_staging_linux` | 8 | idem |
 | `clipora_v8_image_backend` | 17 | idem |
 | `clipora_v8_local_workflow` | 6 | idem |
-| JavaScript frontend | 7 | `node clipora_v8_web/test_frontend_async.cjs` |
-| **Total** | **233** | |
+| JavaScript frontend | 9 | `node clipora_v8_web/test_frontend_async.cjs` |
+| **Total** | **243** | |
 
 Tes ini membuktikan perilaku kode pada lingkungan lokal. Tes ini **bukan** pentest dan bukan
 bukti kesiapan deployment. Angka 26/32 pada audit legacy adalah check yang sebagian memang
@@ -62,6 +62,10 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    aplikasi, tidak disajikan HTTP, dan tidak masuk image.
 4. **Kode arsip Tools** (`tools_archive/device-preview`) disimpan sebagai referensi, tidak
    dimuat produk, dan diuji mengembalikan `404`.
+5. **Mode demo mengirim file contoh.** `--demo-downloads` menyajikan empat file sampel di
+   `assets/demo/` (±92 KB). File itu bukan isi post yang ditempel, tidak masuk image produksi
+   (allowlist `FILES` di `build_image.py`), dan route-nya tidak pernah didaftarkan pada origin
+   HTTPS. Gate publik tetap `503`.
 
 ## Patch OS tertunda
 

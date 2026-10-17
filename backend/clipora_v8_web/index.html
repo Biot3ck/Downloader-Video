@@ -26,23 +26,27 @@
     </section>
     <section id="link-view" class="workspace" aria-label="Link checker">
       <div class="download-panel">
-        <div class="panel-heading"><span class="field-caption" id="form-caption">Start with your video link</span><span class="availability"><span aria-hidden="true"></span>Downloads unavailable</span></div>
+        <div class="panel-heading"><span class="field-caption" id="form-caption">Start with your video link</span><span class="availability" id="availability-pill"><span aria-hidden="true"></span><span id="availability-text">Downloads unavailable</span></span></div>
         <form id="downloadForm">
           <label for="url" id="url-label">Video URL</label>
           <div class="input-row"><input type="url" id="url" required maxlength="2048" autocomplete="off" spellcheck="false" placeholder="Paste a video link here" aria-describedby="platform-help download-notice"><button class="button primary" id="check-link" type="submit">Check link <span aria-hidden="true">→</span></button></div>
           <p id="platform-help" class="input-help">YouTube, TikTok, Instagram, and Pinterest links.</p>
-          <fieldset id="video-formats" class="format-picker" aria-describedby="format-note">
+          <fieldset id="video-formats" class="format-picker" aria-describedby="format-note" hidden>
             <legend>Choose download type</legend>
             <div class="format-options">
               <label class="format-option"><input type="radio" name="download-type" id="format-video" value="video" checked><span><strong>Video</strong><small>Standard quality</small></span></label>
               <label class="format-option"><input type="radio" name="download-type" id="format-hd" value="hd"><span><strong>Video HD</strong><small>Higher source quality</small></span></label>
               <label class="format-option"><input type="radio" name="download-type" id="format-mp3" value="mp3"><span><strong>MP3</strong><small>Audio only</small></span></label>
             </div>
-            <p id="format-note" class="input-help" role="status" aria-live="polite">Video downloads are not available yet. Your selection only sets a preference; Check link recognizes the platform.</p>
+            <p id="format-note" class="input-help" role="status" aria-live="polite">Check a link first. Format options appear once the platform is recognized.</p>
           </fieldset>
+          <div id="download-actions" class="download-actions" hidden>
+            <button class="button primary" id="download-file" type="button"><span id="download-button-label">Download</span> <span aria-hidden="true">↓</span></button>
+            <p id="download-status" class="input-help" role="status" aria-live="polite"></p>
+          </div>
         </form>
         <div id="result" class="result" role="status" aria-live="polite" aria-atomic="true" hidden><strong id="result-title"></strong><p id="result-description"></p></div>
-        <p id="download-notice" class="notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>Public downloads are currently unavailable. You can check whether your link uses a supported platform.</span></p>
+        <p id="download-notice" class="notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span id="download-notice-text">Public downloads are currently unavailable. You can check whether your link uses a supported platform.</span></p>
       </div>
       <div class="platforms" aria-label="Recognized platforms"><span class="platform-caption">Link recognition</span><ul id="platform-list"><li>YouTube</li><li>TikTok</li><li>Instagram</li><li>Pinterest</li></ul></div>
     </section>

@@ -79,17 +79,46 @@ test('supported validation errors retain the actual API guidance',async()=>{
   await done;
   assert.equal(ui.get('result-description').textContent,'Use a YouTube, TikTok, Instagram, or Pinterest post link.');
 });
-test('HD and MP3 preferences do not submit downloads or invented API fields',async()=>{
+test('format options appear only after a recognized link and never submit a download',async()=>{
   const ui=setup();
+  assert.equal(ui.get('video-formats').hidden,true);
+  const done=ui.submit();respond(ui.requests[0]);await done;
+  assert.equal(ui.get('video-formats').hidden,false);
+  assert.ok(ui.get('format-note').textContent.includes('not available'));
   for(const format of ['hd','mp3']){
+    const before=ui.requests.length;
     ui.get('format-'+format).emit('change');
-    assert.equal(ui.requests.length,format==='hd'?0:1);
-    assert.ok(ui.get('format-note').textContent.includes('not available yet'));
-    const done=ui.submit(),request=ui.requests.at(-1);
-    assert.equal(request.url,'/api/v8/validate');
-    assert.deepEqual(JSON.parse(request.options.body),{url:'',media_kind:'video'});
-    respond(request);await done;
+    assert.equal(ui.requests.length,before);
+    assert.equal(ui.requests[0].url,'/api/v8/validate');
   }
   ui.navigate('photo');assert.equal(ui.get('video-formats').hidden,true);
-  ui.navigate('video');assert.equal(ui.get('video-formats').hidden,false);
+  ui.navigate('video');assert.equal(ui.get('video-formats').hidden,true);
+});
+test('demo downloads only call the bundled sample endpoint',async()=>{
+  const ui=setup(),done=ui.submit();
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  assert.equal(ui.get('video-formats').hidden,false);
+  assert.equal(ui.get('download-actions').hidden,false);
+  assert.ok(ui.get('download-notice-text').textContent.includes('bundled sample'));
+  assert.ok(ui.get('format-note').textContent.includes('Bundled sample'));
+  const ready=ui.get('download-file').emit('click');
+  assert.equal(ui.requests[1].url,'/api/v8/demo/download');
+  assert.deepEqual(JSON.parse(ui.requests[1].options.body),{url:'',media_kind:'video',format:'video'});
+  ui.requests[1].resolve({ok:true,status:200,json:async()=>({sample:true,format:'video',platform:'youtube',
+    filename:'clipora-sample-youtube-video.mp4',url:'/api/v8/demo/file/token',network_access_performed:false})});
+  await ready;
+  assert.ok(ui.get('download-status').textContent.includes('clipora-sample-youtube-video.mp4'));
+  assert.equal(ui.get('download-file').disabled,false);
+});
+test('a demo response that is not a bundled sample is rejected',async()=>{
+  const ui=setup(),done=ui.submit();
+  respond(ui.requests[0],{...recognized,demo_downloads_enabled:true});await done;
+  for(const payload of [{sample:true,url:'https://evil.example/x',network_access_performed:false},
+                        {sample:false,url:'/api/v8/demo/file/token',network_access_performed:false},
+                        {sample:true,url:'/api/v8/demo/file/token',network_access_performed:true}]){
+    const ready=ui.get('download-file').emit('click');
+    ui.requests.at(-1).resolve({ok:true,status:200,json:async()=>payload});
+    await ready;
+    assert.ok(!ui.get('download-status').textContent.includes('ready'));
+  }
 });

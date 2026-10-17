@@ -106,7 +106,8 @@ class Boundary:
         return await self.app(scope, receive, secured)
 
 
-def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample_enabled=False):
+def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample_enabled=False,
+               demo_downloads_enabled=False):
     validate_origin(origin)
     app = FastAPI(title='Clipora staging', docs_url=None, redoc_url=None, openapi_url=None)
     limiter=Limiter(state_dir or BASE.parent / 'clipora_v8_web_runtime')
@@ -114,10 +115,12 @@ def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample
     app.add_middleware(Boundary, origin=origin, limiter=limiter)
     @app.get('/healthz')
     def health():
-        return {'status': 'ok', 'public_downloads_enabled': False, 'ready_for_public_launch': False}
+        return {'status': 'ok', 'public_downloads_enabled': False, 'ready_for_public_launch': False,
+                'demo_downloads_enabled': demo_downloads_enabled}
     @app.get('/api/v8/ui/config')
     def config():
         return {'public_downloads_enabled': False, 'offline_sample_enabled': offline_sample_enabled,
+                'demo_downloads_enabled': demo_downloads_enabled,
                 'planned_platforms': ['youtube', 'tiktok', 'instagram', 'pinterest'],
                 'planned_media': {kind: list(platforms) for kind, platforms in MEDIA_PLATFORMS.items()}}
     @app.get('/')
@@ -130,8 +133,9 @@ def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample
     # Developer utilities are only served by the explicit offline loopback
     # preview. Default/HTTPS/container product entrypoints keep returning 404.
     parsed_origin = validate_origin(origin)
-    if (offline_sample_enabled and parsed_origin.scheme == 'http'
-            and parsed_origin.hostname in ('127.0.0.1', 'localhost', '::1')):
+    loopback = (parsed_origin.scheme == 'http'
+                and parsed_origin.hostname in ('127.0.0.1', 'localhost', '::1'))
+    if offline_sample_enabled and loopback:
         @app.get('/dev')
         def developer_page():return FileResponse(BASE / 'dev.html', media_type='text/html')
         @app.get('/assets/dev.js')
@@ -151,14 +155,19 @@ def create_app(origin='http://127.0.0.1:8090', state_dir=None, *, offline_sample
         except (ValueError, TypeError, UnicodeError) as exc:
             raise HTTPException(422, str(exc)) from None
         return {'platform': result.platform, 'normalized_url': result.url, 'media_kind': media_kind,
-                'public_downloads_enabled': False, 'network_access_performed': False}
+                'public_downloads_enabled': False, 'network_access_performed': False,
+                'demo_downloads_enabled': demo_downloads_enabled}
     @app.post('/api/v8/download')
     def disabled():
         raise HTTPException(503, 'Public downloads are not available yet.')
+    if demo_downloads_enabled and loopback:
+        from .demo_downloads import register as register_demo
+        register_demo(app)
     return app
 
 
 def app_factory():
     """Uvicorn entrypoint. Reading the environment happens on call, not on import."""
     return create_app(os.environ.get('CLIPORA_WEB_ORIGIN', 'http://127.0.0.1:8090'),
-                      os.environ.get('CLIPORA_WEB_STATE'))
+                      os.environ.get('CLIPORA_WEB_STATE'),
+                      demo_downloads_enabled=os.environ.get('CLIPORA_DEMO_DOWNLOADS') == '1')
