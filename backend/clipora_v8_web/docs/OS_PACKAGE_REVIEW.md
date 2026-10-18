@@ -1,4 +1,9 @@
 > Catatan: dokumen ini menyimpan rincian audit pada saat penulisannya. Status, angka tes, dan blocker terkini ada di [STATUS.md](../STATUS.md).
+>
+> **Pembaruan 18 Oktober 2026:** keputusan berubah. Host staging Oracle Cloud Always Free dipilih
+> dan image deployment baru ada di `deploy/staging` (base `python:3.15-slim-trixie`, FFmpeg dari
+> Debian, lock Python ber-hash). Temuan di bawah menargetkan image lama `clipora-web:v8-staging`;
+> audit paket OS harus diulang pada image baru sebelum sign-off.
 
 # Review paket OS dan persiapan Linux staging — 17 Oktober 2026
 

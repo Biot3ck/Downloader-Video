@@ -1,5 +1,9 @@
 Status: pemasangan VM tidak disetujui; pemilik memilih persiapan kode saja pada 17 Oktober 2026. Jangan menjalankan instalasi berdasarkan dokumen ini.
 
+> **Pembaruan 18 Oktober 2026:** usulan VM lokal ini tidak dijalankan dan bukan lagi jalur yang
+> dipilih. Host staging diarahkan ke Oracle Cloud Always Free; lihat `deploy/oracle/README.md`.
+> Dokumen ini disimpan sebagai catatan historis.
+
 # Usulan staging Linux lokal untuk persetujuan
 
 Belum dijalankan. Dibuat 17 Oktober 2026. Mac ini ARM64, RAM 24 GiB, ruang disk bebas sekitar 589 GiB saat diperiksa. Docker Desktop tersedia; Lima, Multipass, QEMU dan Colima tidak ditemukan.

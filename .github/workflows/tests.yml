@@ -47,3 +47,22 @@ jobs:
           node-version: '22'
       - name: Run frontend tests
         run: node backend/clipora_v8_web/test_frontend_async.cjs
+
+  staging-image:
+    name: Staging image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the deployment image
+        run: docker build -f deploy/staging/Dockerfile -t clipora-web:ci .
+      - name: Check the runtime tools
+        run: |
+          docker run --rm --entrypoint sh clipora-web:ci -c \
+            'ffmpeg -version | head -1 && python -c "import curl_cffi, yt_dlp; print(yt_dlp.version.__version__)"'
+      - name: Run the web suite inside the image
+        run: |
+          docker run --rm --entrypoint python \
+            -v "$PWD/backend/clipora_v8_web:/srv/clipora_v8_web:ro" \
+            -v "$PWD/backend/clipora_v8_browser_real_mp4:/srv/clipora_v8_browser_real_mp4:ro" \
+            -w /srv clipora-web:ci \
+            -B -m unittest discover -s clipora_v8_web -p 'test*.py' -q

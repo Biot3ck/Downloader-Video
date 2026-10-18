@@ -45,4 +45,8 @@ Tambahan wajib: kandidat submission/scheduler/extractor publik yang terintegrasi
 
 Pembaruan scope: pemilik kembali memilih tanpa VM. Review pencocokan OS dan alat audit lokal sudah dijalankan, dengan [rencana patch/staging](OS_PACKAGE_REVIEW.md); ini tidak memberikan sign-off paket atau host Linux. Bukti OS baru: outputs/clipora-os-package-review-final.json dan clipora-os-native-linkage.json pada workspace chat.
 
+**Pembaruan 18 Oktober 2026:** pemilik memilih Oracle Cloud Always Free dan image deployment
+`deploy/staging` sudah tersedia. VM belum dibuat, jadi urutan enam bloker di atas belum dijalankan
+dan tidak ada sign-off baru.
+
 Sediakan Linux staging terpisah melalui pilihan pemilik, tanpa menyentuh VPS produksi. Jalankan urutan ../clipora_v8_staging_linux/README.md dan kumpulkan bukti enam blocker di atas pada kandidat deployment yang sama. Setelah hasil dan konfigurasi final dapat ditinjau, lakukan sign-off keamanan; persetujuan aktivasi egress/deployment tetap langkah tersendiri. Tidak ada fungsi aktivasi atau sign-off otomatis pada perubahan ini.

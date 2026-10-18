@@ -36,6 +36,9 @@ Audit lama tetap 26/32 dengan enam blocker. Jangan mengganti gate False menjadi 
 - Kandidat offline kini menguji worker aktual melalui dua Docker network internal, gateway/egress TLS mutual, DNS/broker/kernel/socket/TLS aplikasi. Bypass selama lease aktif dan penolakan identitas client TLS diuji. Lihat ../clipora_v8_firewall_candidate/THREE_TIER_KERNEL.md dan MUTUAL_TLS.md. Ini bukan bukti unduhan internet atau attestation host Linux deployment.
 - Kandidat ownership memakai queue durable yang ada, sesi browser, idempotency, authorization status/file/Range, queued cancellation dan bounded sweep dengan inode lock. Factory container eksplisit tersedia dan diuji; submission publik/scheduler tetap belum dipasang. Lihat OWNERSHIP.md.
 - VM Linux tidak dipasang: pemilik memilih melanjutkan persiapan kode tanpa VM. Usulan ../clipora_v8_staging_linux/PROPOSAL.md tetap dokumen rencana, bukan persetujuan instalasi. VPS dan deployment tidak disentuh.
+- **Pembaruan 18 Oktober 2026:** keputusan berubah. Host staging Oracle Cloud Always Free dipilih,
+  dan image deployment `deploy/staging` sudah ada beserta compose/Caddy. VM belum dibuat, jadi
+  belum ada bukti bloker baru dan gate publik tetap tertutup.
 - Audit lama tetap 26/32. Tidak ada hardcoded gate yang diganti berdasarkan pengujian fixture. Lima, QEMU, Colima atau VM baru tidak dipasang oleh pekerjaan ini.
 
 - Kandidat kini mempunyai request cancellation durable, observer stop, dan atomic publisher yang menolak hasil terlambat. Cancellation worker Docker aktual diuji pada tiga tier/mTLS saat lease aktif. Lihat CANCELLATION.md; ini belum memasang scheduler/download publik.

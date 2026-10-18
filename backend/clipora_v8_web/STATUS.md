@@ -100,6 +100,10 @@ Compose menjalankan web di belakang Caddy dengan TLS, `read_only`, `cap_drop: AL
 (`compose.real-test.yaml`) lewat SSH tunnel; instance publik tetap tanpa route nyata. Panduan:
 `deploy/staging/README.md` dan `deploy/oracle/README.md`.
 
+Review paket OS 17 Oktober menargetkan image lama (`clipora-web:v8-staging`, mewarisi worker).
+Image baru memakai base dan daftar paket yang berbeda, jadi review itu **harus diulang** pada
+image `clipora-web:staging` sebelum sign-off keamanan.
+
 ## Fase 0.5 — hasil jalur sah (GitHub Actions, 18 Oktober 2026)
 
 Workflow `spike` dijalankan dari runner Azure (IP `4.149.237.36` dan `20.55.162.193`), 80 URL
@@ -128,8 +132,10 @@ di atas.
 
 ## Bloker persetujuan publik
 
-Belum ada yang bisa ditutup tanpa host staging Linux terpisah. Pemilik memilih tanpa VM, jadi
-status yang jujur adalah **demo internal**, bukan "hampir siap".
+Belum ada yang bisa ditutup tanpa host staging Linux terpisah. Pada 18 Oktober 2026 pemilik
+memilih **Oracle Cloud Always Free** sebagai host staging; VM belum dibuat, jadi status yang jujur
+masih **demo internal**, bukan "hampir siap". Image kandidat dan panduan deployment sudah tersedia
+di `deploy/staging` dan `deploy/oracle`; bukti enam bloker baru bisa dikumpulkan setelah host ada.
 
 | Bloker | Syarat penutupan |
 | --- | --- |
