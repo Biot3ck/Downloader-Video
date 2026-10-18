@@ -29,6 +29,9 @@ backend/
   clipora_v8_real_guarded_e2e/    harness e2e ter-guard
   clipora_v8_formats_lab/         kandidat kebijakan format (tidak diimpor produk)
   clipora_v8_spike/               alat Fase 0.5: uji kelayakan platform (tidak diimpor produk)
+deploy/
+  staging/                        image deployment, compose, Caddy, lock runtime
+  oracle/                         panduan dan provision host Oracle Always Free
 ```
 
 Dokumentasi produk dimulai dari [backend/clipora_v8_web/README.md](backend/clipora_v8_web/README.md).
@@ -60,11 +63,26 @@ Untuk mengunduh media sungguhan dari post, pakai mode nyata (opt-in, hanya loopb
 .venv/bin/python -B clipora_v8_web/run_local.py --port 8090 --real-downloads
 ```
 
-Mode ini butuh `yt-dlp`, `ffmpeg`, dan `ffprobe` di `PATH` (sudah ada di image worker). Yang
-terjadi: link dibaca, preview memutar file asli, lalu tombol Download menyimpan MP4 (H.264/AAC),
-MP3 (192 kbps), atau gambar/ZIP carousel. Batasnya 100 MB per file, 10 menit durasi, 20 gambar
-per carousel. Route `/api/v8/real/*` tidak didaftarkan pada image publik dan gate publik tetap
-`503`. Lihat [STATUS.md](backend/clipora_v8_web/STATUS.md) untuk hasil verifikasi manual.
+Mode ini butuh `yt-dlp`, `ffmpeg`, dan `ffprobe` di `PATH` (di image deployment sudah terpasang).
+Yang terjadi: link dibaca, preview memutar file asli, lalu tombol Download menyimpan MP4
+(H.264/AAC), MP3 (192 kbps), atau gambar/ZIP carousel. Batasnya 100 MB per file, 10 menit
+durasi, 20 gambar per carousel. Route `/api/v8/real/*` tidak didaftarkan pada image publik dan
+gate publik tetap `503`. Lihat [STATUS.md](backend/clipora_v8_web/STATUS.md) untuk hasil
+verifikasi manual.
+
+## Deploy staging
+
+Image deployment ada di `deploy/staging` (bukan image worker lokal): `python:3.15-slim-trixie` +
+FFmpeg + lock runtime ber-hash, dijalankan di belakang Caddy dengan TLS. Gate publik tetap
+tertutup.
+
+```sh
+docker build -f deploy/staging/Dockerfile -t clipora-web:staging .
+```
+
+Panduan host Oracle Always Free (akun, VCN, VM ARM, DNS, TLS, verifikasi) ada di
+[deploy/oracle/README.md](deploy/oracle/README.md). Rincian image dan uji ekstraksi lewat tunnel
+loopback ada di [deploy/staging/README.md](deploy/staging/README.md).
 
 ## Menjalankan tes
 

@@ -302,10 +302,11 @@ tinggi. Baca ToS penyedia sebelum mengandalkannya; jangan jadikan free tier seba
 
 | Pekerjaan | Detail | Bukti |
 | --- | --- | --- |
-| Provision host | VM Debian 13 (agar cocok `base_image.lock`), 2 vCPU / 12 GB / 60 GB di Oracle Always Free (atau 4 vCPU / 8 GB bila berbayar); IPv4 dan IPv6 | `uname -a`, spesifikasi |
+| Provision host | VM Ubuntu 24.04 arm64 di Oracle Always Free, 2 OCPU / 12 GB / 50 GB; image aplikasi tetap Debian 13 di dalam container; IPv4 (IPv6 opsional) | `uname -a`, spesifikasi |
+| Image deployment | `deploy/staging`: `python:3.15-slim-trixie` + FFmpeg + lock ber-hash, web di belakang Caddy, gate publik tertutup | `docker build`, 124 tes di dalam image, `/healthz` |
 | DNS & domain | A + AAAA ke host staging, TTL rendah, tanpa wildcard | `dig` A/AAAA |
 | TLS | Jalur VPS: Let's Encrypt via ACME untuk domain staging. Jalur VM lokal: sertifikat self-signed **hanya** untuk menguji konfigurasi — bukan bukti TLS produksi | `openssl s_client`, masa berlaku, dan catatan jalur mana yang dipakai |
-| Hardening dasar | SSH key-only, non-root, nftables default-deny, unattended-upgrades | `ss -tulpn`, ruleset |
+| Hardening dasar | SSH key-only, non-root, firewall host hanya 80/443 + SSH terbatas, unattended-upgrades, log rotation | `ss -tulpn`, ruleset |
 | Observability | Log terstruktur tanpa URL/secret, metrik CPU/disk/request/job, alert disk >80% | Dashboard + 1 alert teruji |
 | Backup & restore | Backup harian DB + konfigurasi, **uji restore** | Log restore drill |
 | CI/CD | Build image di CI, tag immutable, rollback satu perintah | Deploy + rollback teruji |

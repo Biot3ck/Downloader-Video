@@ -1,0 +1,21 @@
+# Build context for deploy/staging/Dockerfile.
+.git
+.github
+.playwright-mcp
+**/__pycache__
+**/*.py[cod]
+*.md
+
+# Runtime state and spike artefacts never belong in an image
+backend/clipora_v8_web_runtime
+backend/clipora_v8_spike
+backend/clipora_v8_staging_linux
+backend/clipora_v8_verified_tls
+backend/clipora_v8_browser_real_mp4/staging
+
+# Tests, internal docs, and the developer page are not part of the product
+backend/clipora_v8_web/test*.py
+backend/clipora_v8_web/docs
+backend/clipora_v8_web/dev.html
+backend/clipora_v8_web/assets/dev.js
+backend/clipora_v8_web/assets/dev.css

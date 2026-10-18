@@ -42,9 +42,10 @@ dihardcode belum terbukti, bukan skor.
 `run_local.py --real-downloads` (atau `CLIPORA_REAL_DOWNLOADS=1`) mendaftarkan route
 `/api/v8/real/*` hanya bila tiga syarat terpenuhi: flag aktif, permintaan datang dari loopback,
 dan origin sama. `/api/v8/download` tetap `503`, dan `ready_for_public_launch` tetap `false`.
-Mode ini tidak masuk image publik: `requirements-web.lock` belum memuat yt-dlp/httpx/curl_cffi,
-dan image web belum memasang FFmpeg. TikTok dari IP datacenter **membutuhkan** `--impersonate`
-(`curl_cffi`); tanpa itu success rate-nya 0% (lihat bagian Fase 0.5 di bawah).
+Mode ini sekarang ikut terpaket di image deployment `deploy/staging` (lock ber-hash, FFmpeg,
+`real_media.py`, `yt-dlp`, `curl_cffi`), tetapi tetap **tidak** aktif pada origin publik: route
+nyata hanya mendaftar untuk origin loopback. TikTok dari IP datacenter **membutuhkan**
+`--impersonate` (`curl_cffi`); tanpa itu success rate-nya 0% (lihat bagian Fase 0.5 di bawah).
 
 | Batas | Nilai |
 | --- | --- |
@@ -74,6 +75,30 @@ Verifikasi manual 18 Oktober 2026 (browser nyata, server loopback port 8090):
 Catatan kejujuran: Instagram tanpa login hanya memberi stream resolusi rendah; Pinterest kerap
 hanya menyimpan satu ukuran asli. Angka di atas adalah hasil satu kali uji manual, bukan
 success rate — itu tetap tugas Fase 0.5 di host yang sah.
+
+## Image deployment (`deploy/staging`)
+
+Image untuk host nyata dibangun dari `python:3.15-slim-trixie` (digest multi-arsitektur) +
+FFmpeg, tanpa mewarisi image worker. Isinya: surface web, `real_media.py`, dua modul bersama
+(`job_store`, `artifact_delivery`), `yt-dlp`, `httpx`, `curl_cffi`, dan lock runtime ber-hash
+untuk linux/arm64 + amd64 (`deploy/staging/requirements-runtime.lock`).
+
+Bukti 18 Oktober 2026, container lokal:
+
+| Pemeriksaan | Hasil |
+| --- | --- |
+| 124 tes web di dalam image | lulus |
+| `/healthz` | `public_downloads_enabled: false`, `ready_for_public_launch: false` |
+| Preview TikTok | 720×1280, 49 detik, caption utuh |
+| MP3 TikTok | `audio/mpeg`, 1,2 MB, 49,97 detik, 192 kbps |
+| HD TikTok | MP4 1080×1920, 36 MB, H.264 |
+| `POST /api/v8/download` | `503` |
+| `/api/v8/real/*` pada origin HTTPS | `404` (tidak terdaftar) |
+
+Compose menjalankan web di belakang Caddy dengan TLS, `read_only`, `cap_drop: ALL`,
+`no-new-privileges`, dan batas memori/PID. Uji ekstraksi di host memakai overlay loopback
+(`compose.real-test.yaml`) lewat SSH tunnel; instance publik tetap tanpa route nyata. Panduan:
+`deploy/staging/README.md` dan `deploy/oracle/README.md`.
 
 ## Fase 0.5 — hasil jalur sah (GitHub Actions, 18 Oktober 2026)
 
@@ -119,9 +144,11 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
 
 ## Deviasi yang diketahui
 
-1. **Image web mewarisi image worker.** `clipora-worker:v8-dns` membawa FFmpeg, yt-dlp dan
-   library codec; web tier tidak membutuhkannya. Pemisahan ke runtime Python minimal adalah
-   perubahan terpisah yang harus diaudit ulang. Pin ada di `base_image.lock`.
+1. **Dua jalur build image.** Image deployment ada di `deploy/staging`: dibangun dari
+   `python:3.15-slim-trixie` (digest multi-arsitektur) + FFmpeg + lock runtime ber-hash, tanpa
+   mewarisi image worker. Jalur lama `build_image.py`/`Dockerfile`/`base_image.lock` masih
+   mewarisi `clipora-worker:v8-dns`, tidak bisa dipakai di host baru, dan kini hanya untuk
+   staging offline. Jangan memakai jalur lama untuk deployment.
 2. **History dihapus dari surface; Audio sekarang nyata.** Menu History tidak ada di markup,
    JavaScript, maupun route demo (`/api/v8/history` → `404`). Halaman Audio Downloader sudah
    aktif: input URL video, preview pemutar audio, dan tombol **Download MP3**. Audio memakai
@@ -146,13 +173,14 @@ Rincian: [docs/RELEASE_SECURITY.md](docs/RELEASE_SECURITY.md).
    dan sudah diuji manual: TikTok 7 gambar, Instagram 2 gambar, Pinterest 1 gambar. Angka
    success rate lintas platform tetap harus diukur di jalur sah (ROADMAP 4.2.1/4.3); mode demo
    dan image publik belum punya jalur gambar.
-7. **Mode nyata belum bisa dipaketkan ke image publik.** `requirements-web.lock` belum memuat
-   `yt-dlp`/`httpx`/`curl_cffi`, `build_image.py` belum menyalin `real_media.py`, dan image web
-   belum memasang FFmpeg, jadi route `/api/v8/real/*` hanya hidup di venv lokal. `curl_cffi`
-   bukan opsional untuk deployment: tanpa `--impersonate`, TikTok dari IP datacenter 0/14
-   (STATUS, Fase 0.5). Selain itu kualitas sumber dibatasi platform: Instagram tanpa login
-   memberi stream resolusi rendah (360×640 pada uji), Pinterest kadang hanya menyimpan satu
-   ukuran asli. UI menampilkan ukuran sebenarnya, bukan angka yang dijanjikan.
+7. **Mode nyata sudah terpaket, gerbang publik belum.** `deploy/staging` memuat `real_media.py`,
+   `yt-dlp`, `httpx`, `curl_cffi`, dan FFmpeg dengan lock ber-hash; 124 tes web lulus di dalam
+   image, dan ekstraksi TikTok/MP3/HD sudah diverifikasi di container. Yang tersisa bukan
+   pemaketan, melainkan (a) gerbang publik dan enam bloker, (b) jalur `build_image.py` lama yang
+   tidak dipakai lagi untuk deployment, dan (c) keputusan produk soal YouTube. Kualitas sumber
+   tetap dibatasi platform: Instagram tanpa login memberi stream resolusi rendah (360×640 pada
+   uji), Pinterest kadang hanya menyimpan satu ukuran asli. UI menampilkan ukuran sebenarnya,
+   bukan angka yang dijanjikan.
 
 ## Bukti uji manual mode nyata (18 Okt 2026)
 

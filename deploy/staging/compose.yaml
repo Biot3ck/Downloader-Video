@@ -1,0 +1,71 @@
+name: clipora-staging
+
+services:
+  web:
+    image: clipora-web:staging
+    build:
+      context: ../..
+      dockerfile: deploy/staging/Dockerfile
+    restart: unless-stopped
+    environment:
+      # Must be the exact public origin: scheme, host, no trailing slash.
+      CLIPORA_WEB_ORIGIN: https://${CLIPORA_DOMAIN:?set CLIPORA_DOMAIN}
+      CLIPORA_WEB_STATE: /data
+      # Public downloads stay closed. Real routes only register for a loopback
+      # origin, which this service deliberately is not.
+      CLIPORA_REAL_DOWNLOADS: "0"
+    volumes:
+      - state:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    shm_size: 256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 2g
+    pids_limit: 256
+    networks: [edge]
+    # Trust forwarded headers only from the compose network, so the admission
+    # limiter sees the real client instead of the Caddy container.
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --proxy-headers
+      - --forwarded-allow-ips=172.28.0.0/16
+      - --no-access-log
+      - --limit-concurrency
+      - "32"
+      - --timeout-keep-alive
+      - "5"
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      CLIPORA_DOMAIN: ${CLIPORA_DOMAIN:?set CLIPORA_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+
+volumes:
+  state:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

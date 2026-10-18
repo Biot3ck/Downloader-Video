@@ -10,6 +10,7 @@ __pycache__/
 *.db
 .env
 .env.*
+!.env.example
 
 # Generated downloads and test output
 downloads/

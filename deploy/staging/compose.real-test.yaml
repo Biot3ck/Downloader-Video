@@ -1,0 +1,48 @@
+# Optional overlay for verifying real extraction on the staging host.
+#
+# It publishes the app on the host loopback only, with a loopback origin, which
+# is the only configuration in which the real routes register. Reach it through
+# an SSH tunnel:
+#
+#   ssh -N -L 8091:127.0.0.1:8091 ubuntu@<host>
+#   open http://127.0.0.1:8091
+#
+# Never expose this service on a public interface: it has no public-launch
+# controls and exists only to prove the media pipeline on the candidate host.
+services:
+  real-test:
+    profiles: ["real-test"]
+    image: clipora-web:staging
+    restart: "no"
+    environment:
+      CLIPORA_WEB_ORIGIN: http://127.0.0.1:8091
+      CLIPORA_WEB_STATE: /data
+      CLIPORA_REAL_DOWNLOADS: "1"
+    volumes:
+      - real_test_state:/data
+    ports:
+      - "127.0.0.1:8091:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    shm_size: 256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 2g
+    pids_limit: 256
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --no-proxy-headers
+      - --no-access-log
+      - --limit-concurrency
+      - "32"
+      - --timeout-keep-alive
+      - "5"
+
+volumes:
+  real_test_state:

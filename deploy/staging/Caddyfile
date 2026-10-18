@@ -1,0 +1,18 @@
+{$CLIPORA_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# Streaming media must not sit in a proxy buffer.
+	reverse_proxy web:8080 {
+		flush_interval -1
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
