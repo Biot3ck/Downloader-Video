@@ -2,7 +2,7 @@
 
 Clipora adalah antarmuka downloader untuk video, foto, dan audio (MP3) dari TikTok, Instagram
 dan Pinterest. YouTube tetap ada di kode untuk pengujian dari IP rumah, tetapi ditangguhkan dari
-janji publik: 0/20 dari IP datacenter pada tiga client (ROADMAP 4.4). **Unduhan publik sengaja
+janji publik dan tidak ditampilkan di UI: 0/20 dari IP datacenter pada tiga client (ROADMAP 4.4). **Unduhan publik sengaja
 dinonaktifkan pada paket ini.** Yang aktif hanya pengenalan link dan pemeriksaan platform; tidak
 ada ekstraksi, konversi, iklan, atau penulisan file media.
 

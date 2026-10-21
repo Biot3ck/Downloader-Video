@@ -2,11 +2,11 @@
 // Product surface: link recognition only, plus bundled sample media when the
 // explicit local demo preview is enabled. No worker, no network, no public gate.
 const views={
-  video:{label:'Video Downloader',line:'Your videos.',accent:'One simple link.',description:'A simpler way to save the videos you love. Start with a link from your favorite platform.',kind:'video',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'YouTube, TikTok, Instagram, and Pinterest links.',platforms:['YouTube','TikTok','Instagram','Pinterest']},
+  video:{label:'Video Downloader',line:'Your videos.',accent:'One simple link.',description:'A simpler way to save the videos you love. Start with a link from your favorite platform.',kind:'video',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'TikTok, Instagram, and Pinterest links.',platforms:['TikTok','Instagram','Pinterest']},
   photo:{label:'Photo Downloader',line:'Your photos.',accent:'One simple link.',description:'From a single photo to an entire carousel. Keep the moments you want to come back to.',kind:'images',caption:'Start with your photo post link',input:'Photo post URL',placeholder:'Paste a photo post or pin link here',help:'TikTok photo posts, Instagram posts, and Pinterest pins.',platforms:['TikTok','Instagram','Pinterest']},
   // Audio is extracted from a video post, so recognition and download reuse the
   // video media kind; only the preview flavour and the fixed format differ.
-  audio:{label:'Audio Downloader',line:'Your audio.',accent:'Keep the sound.',description:'Turn a video link into an MP3. Check the link, then download the audio on its own.',kind:'video',previewKind:'audio',format:'mp3',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'YouTube, TikTok, Instagram, and Pinterest links.',platforms:['YouTube','TikTok','Instagram','Pinterest']}
+  audio:{label:'Audio Downloader',line:'Your audio.',accent:'Keep the sound.',description:'Turn a video link into an MP3. Check the link, then download the audio on its own.',kind:'video',previewKind:'audio',format:'mp3',caption:'Start with your video link',input:'Video URL',placeholder:'Paste a video link here',help:'TikTok, Instagram, and Pinterest links.',platforms:['TikTok','Instagram','Pinterest']}
 };
 const names={youtube:'YouTube',tiktok:'TikTok',instagram:'Instagram',pinterest:'Pinterest'};
 const form=document.getElementById('downloadForm'),input=document.getElementById('url'),button=document.getElementById('check-link');

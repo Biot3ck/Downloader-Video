@@ -122,7 +122,9 @@ cukup untuk memisahkan masalah IP dari masalah toolchain.
   itu bila `curl_cffi` terpasang.
 - **YouTube:** tiga client (`android_vr`, `tv`, `web_embedded`) diuji terpisah, semuanya 0/20
   dengan *Sign in to confirm you're not a bot*. Tanpa cookie/PO token tidak ada jalur sah dari
-  IP datacenter. **YouTube ditangguhkan dari janji publik** (ROADMAP 4.4).
+  IP datacenter. **YouTube ditangguhkan dari janji publik** (ROADMAP 4.4). Sejak 21 Oktober 2026
+  YouTube tidak lagi muncul di teks bantuan atau daftar platform UI; `platforms.py` tetap
+  menerima link YouTube untuk uji lokal.
 - **Keputusan 4.3:** **LANJUT**. Ruang lingkup publik v1: TikTok, Instagram, Pinterest.
 - Laporan mentah: `backend/clipora_v8_spike/RESULTS.md` (ringkasan tanpa URL). Berkas per URL
   tetap lokal di `hasil/` karena memuat tautan pihak ketiga.

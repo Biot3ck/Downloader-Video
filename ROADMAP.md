@@ -264,9 +264,9 @@ Ruang lingkup publik v1: **TikTok, Instagram, Pinterest**. **YouTube ditangguhka
 publik sampai ada jalur sah dari IP server. Kode dan UI lokal tetap mendukung YouTube untuk
 pengujian dari IP rumah, tetapi produk publik tidak boleh mengiklankannya.
 
-**Tindak lanjut sebelum deploy:** sembunyikan YouTube dari permukaan publik (teks bantuan dan
-daftar platform di `index.html`/`assets/app.js`), sementara `platforms.py` tetap menerimanya untuk
-uji lokal. Jangan hapus extractor-nya — yang dihapus hanya janji ke pengunjung.
+**Sudah dikerjakan (21 Oktober 2026):** YouTube disembunyikan dari permukaan publik (teks bantuan
+dan daftar platform di `index.html`/`assets/app.js`), sementara `platforms.py` tetap menerimanya
+untuk uji lokal. Jangan hapus extractor-nya — yang dihapus hanya janji ke pengunjung.
 
 **Yang belum terjawab.** Angka ini dari IP Azure bersama; VPS khusus bisa lebih baik atau lebih
 buruk. Konfirmasi di VPS tetap disarankan sebelum biaya bandwidth dikeluarkan. Post gambar tidak

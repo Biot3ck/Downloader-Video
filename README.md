@@ -1,9 +1,9 @@
 # Clipora
 
 Clipora adalah aplikasi web untuk mengunduh video, foto, dan audio MP3 dari TikTok, Instagram
-dan Pinterest. YouTube masih didukung di kode dan UI, tetapi **ditangguhkan dari janji publik**:
-uji 18 Oktober 2026 dari IP datacenter memberi 0/20 pada tiga client karena bot check (ROADMAP
-4.4). Repositori ini berisi surface produk web beserta paket pendukung untuk queue, ownership,
+dan Pinterest. YouTube masih dikenali di kode (termasuk untuk pengujian dari IP rumah), tetapi
+**ditangguhkan dari janji publik** dan tidak lagi ditampilkan di UI publik: uji 18 Oktober 2026
+dari IP datacenter memberi 0/20 pada tiga client karena bot check (ROADMAP 4.4). Repositori ini berisi surface produk web beserta paket pendukung untuk queue, ownership,
 egress, TLS dan audit paket OS.
 
 > **Status: demo internal.** Unduhan publik dinonaktifkan (`503`) dan `/healthz` melaporkan
