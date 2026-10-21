@@ -233,10 +233,15 @@ Tiga patch yang tertunda sudah terpenuhi di image baru: expat `2.9.0-1~deb13u1`,
 `0.11.2-0.1~deb13u3`, xz-utils `5.8.1-1+deb13u2`. Sisa open/undetermined belum diperbaiki di
 trixie; yang paling relevan adalah `ffmpeg`/`libav*` (37 record) karena memproses media pengguna.
 
-Mitigasi: `ffmpeg`/`ffprobe` sekarang dijalankan dengan `-protocol_whitelist file` dan `-nostdin`,
-jadi file yang diunduh tidak bisa memicu bukaan URL jaringan atau stdin. Uji konversi WebM → MP4
-dan MP3 tetap lulus. Review ini belum menjadi persetujuan: kernel/host, library bundled Python,
-dan dependency Python tidak tercakup.
+Mitigasi: `ffmpeg`/`ffprobe` sekarang dijalankan dengan `-protocol_whitelist file`, `-nostdin`,
+demuxer yang dipatok dari allowlist, dan allowlist codec input. File yang diunduh tidak bisa
+memicu bukaan URL jaringan, memilih parser kontainer lain, atau menjangkau decoder di luar
+h264/hevc/vp8/vp9/av1/aac/opus/mp3. TikTok nyata (h264/aac) dan WebM vp9/opus lulus.
+
+`pip-audit 2.10.1` atas 21 paket runtime menemukan satu advisory: `certifi 2026.7.22`
+(`PYSEC-2026-4320`). Lock dan `requirements-dev.txt` sudah naik ke `certifi 2026.10.19`, audit
+ulang bersih, dan image dibangun ulang. Review ini belum menjadi persetujuan: kernel/host,
+library bundled Python, dan pemantauan advisory berkala belum tercakup.
 
 ## Jalan berikutnya
 

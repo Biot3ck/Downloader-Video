@@ -66,7 +66,7 @@ produk** dan mana yang masih **kandidat offline**.
 | Three-tier kernel/mTLS | Fixture, teruji | Tidak | Belum di host nyata |
 | Preflight host Linux | Teruji | Tidak | **BLOCKED** di macOS — belum ada host |
 | Image web | Deployment bersih (`deploy/staging`) | Ya | Uji di host nyata |
-| Patch OS (expat, jpeg-xl, xz) | Selesai di image 21 Okt | — | 0 `upgrade_required`; triage 156 open + 8 undetermined tetap wajib |
+| Patch OS (expat, jpeg-xl, xz) | Selesai di image 21 Okt | — | 0 `upgrade_required`; triage reachability tahap pertama selesai, pemantauan tetap wajib |
 
 Angka tes per paket tidak diulang di sini; sumber tunggalnya
 [STATUS.md](backend/clipora_v8_web/STATUS.md).
@@ -337,9 +337,11 @@ Tambahan yang harus ikut di fase ini:
 - **Pisahkan image web dari image worker.** `deploy/staging` sudah tidak mewarisi image worker dan
   hanya memasang dependency produk. FFmpeg/yt-dlp tetap ada karena dibutuhkan unduhan nyata; image
   pengenalan-link tanpa FFmpeg bisa dipertimbangkan bila gate publik dibuka bertahap.
-- **Triage sisa temuan OS:** tiga patch tertunda (expat, jpeg-xl, xz) sudah terpenuhi di image
-  `clipora-web:staging`; sekarang 0 `upgrade_required`. Tersisa 156 "open review required" dan
-  8 "undetermined" yang harus dinilai jalur capainya, plus salinan expat milik Python.
+- **Pantau sisa temuan OS dan dependency.** Tiga patch tertunda (expat, jpeg-xl, xz) sudah
+  terpenuhi di image `clipora-web:staging`; sekarang 0 `upgrade_required`. Triage reachability
+  tahap pertama sudah membatasi FFmpeg ke demuxer dan codec allowlist, dan `pip-audit` menemukan
+  satu advisory `certifi` yang sudah diperbaiki. Tersisa 156 open + 8 undetermined tanpa
+  perbaikan trixie, salinan expat milik Python, dan belum ada jadwal pemantauan berkala.
   Lihat [docs/OS_PACKAGE_REVIEW.md](backend/clipora_v8_web/docs/OS_PACKAGE_REVIEW.md).
 - **Pin & inventaris dependency**, termasuk salinan expat milik Python.
 - **Kill switch runtime.** Saat ini gate publik adalah konstanta hardcoded di `main.py`

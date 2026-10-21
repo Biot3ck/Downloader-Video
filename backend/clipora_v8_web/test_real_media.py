@@ -1,3 +1,4 @@
+import json
 import subprocess
 import tempfile
 import unittest
@@ -349,22 +350,29 @@ class ExtractorTests(unittest.TestCase):
 
 
 class ConversionIsolationTests(unittest.TestCase):
-    """Conversion must never follow URLs embedded in a downloaded file."""
+    """Conversion must never follow URLs or parsers outside the allowlist."""
+
+    def fake_run(self, calls, format_name='matroska,webm', video='vp9', audio='opus'):
+        def run(command, **kwargs):
+            calls.append(command)
+            if command[0] == 'ffprobe':
+                streams = [{'codec_type': 'video', 'codec_name': video, 'pix_fmt': 'yuv420p'},
+                           {'codec_type': 'audio', 'codec_name': audio}]
+                stdout = json.dumps({'format': {'format_name': format_name},
+                                     'streams': streams})
+            else:
+                stdout = ''
+            return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr='')
+        return run
 
     def test_ffmpeg_and_ffprobe_only_read_local_files(self):
         calls = []
-
-        def fake_run(command, **kwargs):
-            calls.append(command)
-            stdout = ('{"streams":[{"codec_type":"video","codec_name":"vp9",'
-                      '"pix_fmt":"yuv420p"}]}') if command[0] == 'ffprobe' else ''
-            return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr='')
-
         with tempfile.TemporaryDirectory() as root:
             source = Path(root) / 'input.webm'
             source.write_bytes(b'x')
             output = Path(root) / 'output.mp4'
-            with patch('clipora_v8_web.real_media.subprocess.run', side_effect=fake_run):
+            with patch('clipora_v8_web.real_media.subprocess.run',
+                       side_effect=self.fake_run(calls)):
                 real_media._to_mp4(source, output)
                 real_media._to_mp3(source, output)
 
@@ -377,6 +385,52 @@ class ConversionIsolationTests(unittest.TestCase):
             self.assertEqual(command[index + 1], 'file')
         for command in ffmpeg:
             self.assertIn('-nostdin', command)
+            self.assertEqual(command[command.index('-f') + 1], 'matroska')
+
+    def test_unexpected_container_is_rejected_before_conversion(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'input.bin'
+            source.write_bytes(b'x')
+            with patch('clipora_v8_web.real_media.subprocess.run',
+                       side_effect=self.fake_run(calls, 'image2')):
+                with self.assertRaises(real_media.MediaError) as caught:
+                    real_media._to_mp4(source, Path(root) / 'output.mp4')
+        self.assertEqual(caught.exception.status, 422)
+        self.assertFalse([c for c in calls if c[0] == 'ffmpeg'])
+
+    def test_mp4_family_pins_the_mov_demuxer(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'input.m4a'
+            source.write_bytes(b'x')
+            with patch('clipora_v8_web.real_media.subprocess.run',
+                       side_effect=self.fake_run(calls, 'mov,mp4,m4a,3gp,3g2,mj2')):
+                real_media._to_mp3(source, Path(root) / 'output.mp3')
+        ffmpeg = [c for c in calls if c[0] == 'ffmpeg'][0]
+        self.assertEqual(ffmpeg[ffmpeg.index('-f') + 1], 'mov')
+
+    def test_decoder_outside_the_allowlist_is_rejected(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'input.mp4'
+            source.write_bytes(b'x')
+            with patch('clipora_v8_web.real_media.subprocess.run',
+                       side_effect=self.fake_run(calls, 'mov,mp4', video='jpeg2000')):
+                with self.assertRaises(real_media.MediaError) as caught:
+                    real_media._to_mp4(source, Path(root) / 'output.mp4')
+        self.assertEqual(caught.exception.status, 422)
+        self.assertFalse([c for c in calls if c[0] == 'ffmpeg'])
+
+    def test_hevc_and_aac_are_allowed(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'input.mov'
+            source.write_bytes(b'x')
+            with patch('clipora_v8_web.real_media.subprocess.run',
+                       side_effect=self.fake_run(calls, 'mov,mp4', video='hevc', audio='aac')):
+                real_media._to_mp4(source, Path(root) / 'output.mp4')
+        self.assertTrue([c for c in calls if c[0] == 'ffmpeg'])
 
 
 if __name__ == '__main__':

@@ -114,3 +114,52 @@ berjalan: uji nyata WebM 2 detik → H.264/AAC MP4 dan MP3 192 kbps lulus, plus 
 Status tetap **belum disetujui**: open/undetermined butuh triage reachability, dan review ini
 tidak mencakup kernel/host, library bundled Python, atau dependency Python. Report mentah
 disimpan lokal dengan mode 0600 dan tidak di-commit.
+
+### Triage reachability
+
+`ldd` pada image menunjukkan `ffmpeg`/`ffprobe` menautkan `libxml2`, `libopenjp2`,
+`libmbedcrypto`, `libcjson`, `libsndfile`, `libgdk_pixbuf`, dan `libX11`. Jadi "tidak dipakai"
+tidak otomatis berarti "tidak bisa dijangkau": yang menentukan adalah parser/decoder yang
+dipanggil. Karena itu pemanggilan FFmpeg dipersempit tiga lapis:
+
+1. `-protocol_whitelist file` — tidak ada URL jaringan.
+2. `-f <demuxer>` dari allowlist (`mov`, `matroska`, `mpegts`, `flv`, `avi`, `mp3`, `aac`,
+   `ogg`, `wav`, `mpeg`) — FFmpeg tidak mendeteksi ulang kontainer.
+3. Allowlist codec input: video `h264/hevc/vp8/vp9/av1/mpeg4/mpeg2video/theora`; audio
+   `aac/mp3/opus/vorbis/flac/alac/ac3/eac3/pcm_*`. Codec lain (JPEG 2000, TIFF, Blu-ray,
+   game music) ditolak `422` sebelum konversi.
+
+| Grup | Open | Jangkauan setelah pembatasan |
+| --- | ---: | --- |
+| ffmpeg/libav* | 37 | Hanya dekoder yang diizinkan; sebagian advisory bisa mencapai h264/hevc/vp9/aac/opus |
+| glibc | 14 | Semua proses; record trixie tanpa perbaikan |
+| libxml2 | 11 | Ditautkan, tetapi demuxer DASH/HLS tidak diizinkan |
+| mbedtls, cjson | 23 | Hanya lewat librist (SRT); tidak dipakai |
+| openjpeg2, tiff, gdk-pixbuf, cairo, libx11, libxi, freetype, libxrender, glib2.0, libass, libsndfile, alsa-lib | 34 | Jalur gambar/font/device/X11; demuxer atau codec allowlist menolak |
+| util-linux, systemd, tar, perl, ncurses, krb5, p11-kit, sqlite3, zlib, acl, gcc-14, libusb-1.0, attr, bzip2, expat, jpeg-xl, llvm-toolchain-19, pam, shadow | 37 | Paket base OS/runtime, bukan parser media |
+
+Delapan `undetermined` semuanya di luar jalur produk: `game-music-emu`, `libbluray`,
+`libdvdnav`, `pam`, `zvbi`.
+
+Verifikasi nyata: TikTok `7694797676306615583` → `mov`, h264/aac, 20.843.014 byte; konversi MP4
+(copy) dan MP3 1.200.162 byte lulus. WebM sintetis vp9/opus juga lulus di host dan di dalam image
+(Debian FFmpeg 7.1.5).
+
+Ini menjawab "apakah 37 advisory ffmpeg bisa dicapai", bukan menutup advisory-nya. Record tanpa
+perbaikan tetap ada dan harus dipantau.
+
+### Audit dependency Python
+
+`pip-audit 2.10.1` dijalankan terhadap 21 paket runtime yang dipin di
+`deploy/staging/requirements-runtime.lock` (versi sama dengan image; hash khusus Linux dilepas
+agar resolver macOS bisa membaca daftar). Hasil: **1 temuan**, `certifi 2026.7.22`
+(`PYSEC-2026-4320`, perbaikan `2026.10.19`). Lock dan `requirements-dev.txt` dinaikkan ke
+`certifi 2026.10.19`; audit ulang bersih, dan image dibangun ulang dengan hash wheel baru.
+
+### Batas yang masih terbuka
+
+- Advisory tanpa perbaikan di trixie tetap ada; triage di atas membatasi jangkauan, bukan
+  menghilangkan risiko.
+- Kernel/host, konfigurasi seccomp, dan library bundled Python belum ditinjau.
+- Pemantauan berkala (tracker + `pip-audit`) belum dijadwalkan di CI.
+- Belum ada sign-off produksi.

@@ -139,28 +139,60 @@ def _duration_of(path):
         return None
 
 
-def _to_mp4(source, output):
-    """Make the file playable in browsers: H.264 + AAC in a faststart MP4."""
+# Only container families the product actually receives. Pinning the demuxer
+# stops FFmpeg from re-detecting the input and reaching a parser we never meant
+# to expose to an attacker-supplied file.
+DEMUXERS = {'mp4': 'mov', 'mov': 'mov', 'm4a': 'mov', '3gp': 'mov', '3g2': 'mov',
+            'mj2': 'mov', 'matroska': 'matroska', 'webm': 'matroska',
+            'mpegts': 'mpegts', 'flv': 'flv', 'avi': 'avi', 'mp3': 'mp3',
+            'aac': 'aac', 'ogg': 'ogg', 'wav': 'wav', 'mpeg': 'mpeg'}
+
+# Decoders the platforms actually serve. Anything else (JPEG 2000, TIFF,
+# Blu-ray, game music) stays unreachable even when it hides inside a known
+# container, which keeps the open FFmpeg advisories off the product path.
+ALLOWED_VIDEO = {'h264', 'hevc', 'vp8', 'vp9', 'av1', 'mpeg4', 'mpeg2video', 'theora'}
+ALLOWED_AUDIO = {'aac', 'mp3', 'opus', 'vorbis', 'flac', 'alac', 'ac3', 'eac3',
+                 'pcm_s16le', 'pcm_s24le', 'pcm_f32le'}
+
+
+def _probe_media(path):
+    """Return the pinned demuxer and streams, or reject an unexpected container."""
     try:
         probe = subprocess.run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file',
                                 '-show_entries',
-                                'stream=codec_type,codec_name,pix_fmt', '-of', 'json',
-                                str(source)], capture_output=True, text=True, timeout=20,
-                               check=True)
-        streams = json.loads(probe.stdout).get('streams', [])
-    except (subprocess.SubprocessError, OSError, ValueError):
+                                'format=format_name:stream=codec_type,codec_name,pix_fmt',
+                                '-of', 'json', str(path)],
+                               capture_output=True, text=True, timeout=20, check=True)
+        data = json.loads(probe.stdout)
+        streams = data.get('streams') or []
+        names = {part.strip() for part in
+                 (data.get('format') or {}).get('format_name', '').split(',')}
+    except (subprocess.SubprocessError, OSError, ValueError, AttributeError):
         raise MediaError('The downloaded file could not be inspected.', 502) from None
+    demuxer = next((DEMUXERS[name] for name in sorted(names) if name in DEMUXERS), None)
+    if demuxer is None:
+        raise MediaError('The downloaded file uses an unsupported media format.', 422)
+    return demuxer, streams
+
+
+def _to_mp4(source, output):
+    """Make the file playable in browsers: H.264 + AAC in a faststart MP4."""
+    demuxer, streams = _probe_media(source)
     video = next((s for s in streams if s.get('codec_type') == 'video'), None)
     audio = next((s for s in streams if s.get('codec_type') == 'audio'), None)
     if video is None:
         raise MediaError('The platform returned audio only; use the Audio Downloader.', 422)
+    if video.get('codec_name') not in ALLOWED_VIDEO:
+        raise MediaError('The downloaded video uses an unsupported codec.', 422)
+    if audio is not None and audio.get('codec_name') not in ALLOWED_AUDIO:
+        raise MediaError('The downloaded audio uses an unsupported codec.', 422)
     if (source.suffix.lower() == '.mp4' and video.get('codec_name') == 'h264'
             and video.get('pix_fmt') == 'yuv420p'
             and (audio is None or audio.get('codec_name') == 'aac')):
         shutil.copy2(source, output)
         return
     command = ['ffmpeg', '-nostdin', '-y', '-protocol_whitelist', 'file',
-               '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
+               '-f', demuxer, '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
                '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
                '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', str(output)]
     try:
@@ -170,9 +202,15 @@ def _to_mp4(source, output):
 
 
 def _to_mp3(source, output):
+    demuxer, streams = _probe_media(source)
+    audio = next((s for s in streams if s.get('codec_type') == 'audio'), None)
+    if audio is None:
+        raise MediaError('The platform returned no audio track.', 422)
+    if audio.get('codec_name') not in ALLOWED_AUDIO:
+        raise MediaError('The downloaded audio uses an unsupported codec.', 422)
     try:
         subprocess.run(['ffmpeg', '-nostdin', '-y', '-protocol_whitelist', 'file',
-                        '-i', str(source), '-vn', '-c:a', 'libmp3lame',
+                        '-f', demuxer, '-i', str(source), '-vn', '-c:a', 'libmp3lame',
                         '-b:a', '192k', str(output)], capture_output=True, text=True,
                        timeout=300, check=True)
     except (subprocess.SubprocessError, OSError):
