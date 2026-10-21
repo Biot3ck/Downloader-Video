@@ -1,0 +1,49 @@
+name: Real download smoke
+
+# Manual only: this workflow contacts TikTok from a GitHub runner and downloads
+# roughly 60 MB. It proves the staging image serves the real preview/MP4/MP3
+# chain on Linux amd64, not just on the maintainer's machine. The public gate
+# must stay closed during the run.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-download-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build staging image
+        run: docker build -f deploy/staging/Dockerfile -t clipora-web:smoke .
+
+      - name: Ensure ffprobe is available
+        run: command -v ffprobe || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+
+      - name: Run loopback real test
+        run: |
+          docker run -d --name clipora-smoke -p 127.0.0.1:8080:8080 \
+            -e CLIPORA_WEB_ORIGIN=http://127.0.0.1:8080 \
+            -e CLIPORA_REAL_DOWNLOADS=1 \
+            -e CLIPORA_WEB_STATE=/data \
+            clipora-web:smoke
+          python3 deploy/staging/smoke_real.py \
+            --base-url http://127.0.0.1:8080 \
+            --workdir smoke-real \
+            --hd
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs clipora-smoke
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f clipora-smoke || true

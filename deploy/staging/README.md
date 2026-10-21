@@ -70,6 +70,24 @@ mount, siapkan sendiri:
 install -d -m 0700 -o 10001 -g 10001 ./data
 ```
 
+### Smoke otomatis
+
+`deploy/staging/smoke_real.py` mengulang alur browser lewat HTTP: `/healthz`,
+preview, streaming Range (`206`), unduhan MP4, HD, MP3, `ffprobe`, dan gerbang
+`/api/v8/download` yang harus `503`. Hanya stdlib, jadi bisa dijalankan di host,
+di dalam CI, atau lewat tunnel SSH:
+
+```sh
+python3 deploy/staging/smoke_real.py --base-url http://127.0.0.1:8090 \
+  --workdir /tmp/clipora-smoke --hd
+```
+
+Workflow manual `.github/workflows/real-smoke.yml` membangun image di runner
+Linux amd64 dan menjalankan skrip yang sama. Ini membuktikan rantai nyata di
+arsitektur host, bukan hanya di mesin pengembang (arm64). Jalankan lewat
+**Actions → Real download smoke → Run workflow**; tidak dijadwalkan agar tidak
+membebani TikTok.
+
 ## Compose: web di belakang Caddy
 
 `compose.yaml` menjalankan dua service:

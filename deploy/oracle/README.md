@@ -151,6 +151,17 @@ Setelah selesai, matikan:
 docker compose -f compose.yaml -f compose.real-test.yaml --profile real-test down
 ```
 
+Untuk bukti yang bisa diulang (bukan hanya klik manual), jalankan smoke test dari
+komputer Anda lewat tunnel yang sama:
+
+```sh
+python3 deploy/staging/smoke_real.py --base-url http://127.0.0.1:8091 \
+  --workdir /tmp/clipora-smoke --hd
+```
+
+Skrip keluar `0` hanya bila preview, Range `206`, MP4, HD, MP3, dan gerbang
+`503` semuanya benar. Simpan output JSON-nya sebagai bukti deployment.
+
 ## 8. Operasi
 
 ```sh
