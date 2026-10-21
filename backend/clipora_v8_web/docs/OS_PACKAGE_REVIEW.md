@@ -61,7 +61,7 @@ Dari backend, memakai snapshot dan image yang sudah ditinjau:
   --report /absolute/new/os-review.json
 ```
 
-Report baru dibuat 0600 dan file yang ada tidak ditimpa. Exit 2 sengaja menandakan review tidak memberikan persetujuan produksi; periksa report untuk membedakannya dari kegagalan command. Snapshot baru harus diambil ulang dari sumber resmi dan hash/waktu pengambilan dicatat, bukan memakai hash lama terhadap data baru. Enam tes kontrak mencakup pemakaian source version, fixed/not-affected, no-dsa/unimportant, status/data hilang dan input malformed. Perbandingan versi Debian aktual juga dijalankan pada image yang diperiksa.
+Report baru dibuat 0600 dan file yang ada tidak ditimpa. Exit 2 sengaja menandakan review tidak memberikan persetujuan produksi; periksa report untuk membedakannya dari kegagalan command. Snapshot baru harus diambil ulang dari sumber resmi dan hash/waktu pengambilan dicatat, bukan memakai hash lama terhadap data baru. Di macOS, alat ini memerlukan `dpkg` untuk `--compare-versions` (`brew install dpkg`). Enam tes kontrak mencakup pemakaian source version, fixed/not-affected, no-dsa/unimportant, status/data hilang dan input malformed. Perbandingan versi Debian aktual juga dijalankan pada image yang diperiksa.
 
 Regresi tahap ini: 83 tes Python web (termasuk enam tes audit OS), delapan tes preflight staging dan tujuh tes JavaScript lulus, total 98. Source audit baru tidak ada dalam allowlist image web. Tidak perlu restart preview atau rebuild image karena aplikasi aktif tidak diubah.
 
