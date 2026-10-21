@@ -238,6 +238,13 @@ demuxer yang dipatok dari allowlist, dan allowlist codec input. File yang diundu
 memicu bukaan URL jaringan, memilih parser kontainer lain, atau menjangkau decoder di luar
 h264/hevc/vp8/vp9/av1/aac/opus/mp3. TikTok nyata (h264/aac) dan WebM vp9/opus lulus.
 
+Verifikasi UI ulang 21 Oktober 2026 setelah hardening di atas (server loopback port 8090,
+`--real-downloads`, Chromium): TikTok `7694797676306615583` direview lewat tombol **Check link**,
+lalu ketiga format diunduh dari UI. Standar menghasilkan `clipora-tiktok-video.mp4` 720×1280
+h264/aac 20,8 MB; HD menghasilkan `clipora-tiktok-hd.mp4` 1080×1920 h264/aac 37,6 MB; MP3
+menghasilkan `clipora-tiktok-audio.mp3` 192 kbps 44,1 kHz. Status tombol berakhir
+`File ready: <nama file>` dan file benar-benar tersimpan di disk — bukan hanya respons API.
+
 `pip-audit 2.10.1` atas 21 paket runtime menemukan satu advisory: `certifi 2026.7.22`
 (`PYSEC-2026-4320`). Lock dan `requirements-dev.txt` sudah naik ke `certifi 2026.10.19`, audit
 ulang bersih, dan image dibangun ulang. Audit dependency Python berjalan mingguan di CI; review
