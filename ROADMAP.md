@@ -341,7 +341,8 @@ Tambahan yang harus ikut di fase ini:
   terpenuhi di image `clipora-web:staging`; sekarang 0 `upgrade_required`. Triage reachability
   tahap pertama sudah membatasi FFmpeg ke demuxer dan codec allowlist, dan `pip-audit` menemukan
   satu advisory `certifi` yang sudah diperbaiki. Tersisa 156 open + 8 undetermined tanpa
-  perbaikan trixie, salinan expat milik Python, dan belum ada jadwal pemantauan berkala.
+  perbaikan trixie dan salinan expat milik Python. `pip-audit` berjalan mingguan di CI; review
+  tracker Debian masih manual.
   Lihat [docs/OS_PACKAGE_REVIEW.md](backend/clipora_v8_web/docs/OS_PACKAGE_REVIEW.md).
 - **Pin & inventaris dependency**, termasuk salinan expat milik Python.
 - **Kill switch runtime.** Saat ini gate publik adalah konstanta hardcoded di `main.py`

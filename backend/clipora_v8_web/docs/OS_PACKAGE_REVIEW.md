@@ -161,5 +161,6 @@ agar resolver macOS bisa membaca daftar). Hasil: **1 temuan**, `certifi 2026.7.2
 - Advisory tanpa perbaikan di trixie tetap ada; triage di atas membatasi jangkauan, bukan
   menghilangkan risiko.
 - Kernel/host, konfigurasi seccomp, dan library bundled Python belum ditinjau.
-- Pemantauan berkala (tracker + `pip-audit`) belum dijadwalkan di CI.
+- Pemantauan `pip-audit` berjalan mingguan di `.github/workflows/advisory.yml`; review tracker
+  Debian masih manual karena membutuhkan `dpkg` dan image yang dibangun.
 - Belum ada sign-off produksi.

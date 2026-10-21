@@ -1,0 +1,31 @@
+name: advisory
+
+# Weekly Python advisory check. The Debian tracker review stays manual because
+# it needs dpkg plus a built image; see backend/clipora_v8_web/docs/OS_PACKAGE_REVIEW.md.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    name: Runtime dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pip-audit
+        run: python -m pip install --disable-pip-version-check pip-audit==2.10.1
+      - name: Audit the pinned runtime set
+        # The lock carries Linux wheel hashes for the deployment image. Strip
+        # them so the audit resolves the same versions on the runner; the image
+        # build still enforces every hash.
+        run: |
+          sed -E 's/[[:space:]]+--hash=sha256:[0-9a-f]+//g' \
+            deploy/staging/requirements-runtime.lock > /tmp/runtime.txt
+          pip-audit --progress-spinner off -r /tmp/runtime.txt

@@ -240,8 +240,9 @@ h264/hevc/vp8/vp9/av1/aac/opus/mp3. TikTok nyata (h264/aac) dan WebM vp9/opus lu
 
 `pip-audit 2.10.1` atas 21 paket runtime menemukan satu advisory: `certifi 2026.7.22`
 (`PYSEC-2026-4320`). Lock dan `requirements-dev.txt` sudah naik ke `certifi 2026.10.19`, audit
-ulang bersih, dan image dibangun ulang. Review ini belum menjadi persetujuan: kernel/host,
-library bundled Python, dan pemantauan advisory berkala belum tercakup.
+ulang bersih, dan image dibangun ulang. Audit dependency Python berjalan mingguan di CI; review
+tracker Debian masih manual. Review ini belum menjadi persetujuan: kernel/host dan library
+bundled Python belum tercakup.
 
 ## Jalan berikutnya
 
