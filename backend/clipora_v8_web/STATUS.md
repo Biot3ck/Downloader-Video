@@ -245,6 +245,14 @@ h264/aac 20,8 MB; HD menghasilkan `clipora-tiktok-hd.mp4` 1080×1920 h264/aac 37
 menghasilkan `clipora-tiktok-audio.mp3` 192 kbps 44,1 kHz. Status tombol berakhir
 `File ready: <nama file>` dan file benar-benar tersimpan di disk — bukan hanya respons API.
 
+Rantai yang sama dijalankan pada **Linux amd64** di GitHub Actions (run `39578028076`,
+21 Oktober 2026): image `deploy/staging` dibangun di runner, container dijalankan dengan origin
+loopback + `CLIPORA_REAL_DOWNLOADS=1`, lalu `deploy/staging/smoke_real.py --hd` memeriksa
+`/healthz`, preview 720×1280, Range `206` (1.024 byte dari 20.575.177), MP4 20.575.177 byte
+h264/aac, HD 37.424.698 byte, MP3 1.201.110 byte 192 kbps, dan gerbang `/api/v8/download` `503`.
+Workflow manual `.github/workflows/real-smoke.yml` mengulang uji ini; tidak dijadwalkan agar
+tidak membebani platform.
+
 `pip-audit 2.10.1` atas 21 paket runtime menemukan satu advisory: `certifi 2026.7.22`
 (`PYSEC-2026-4320`). Lock dan `requirements-dev.txt` sudah naik ke `certifi 2026.10.19`, audit
 ulang bersih, dan image dibangun ulang. Audit dependency Python berjalan mingguan di CI; review

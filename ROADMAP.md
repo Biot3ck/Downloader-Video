@@ -303,7 +303,7 @@ tinggi. Baca ToS penyedia sebelum mengandalkannya; jangan jadikan free tier seba
 | Pekerjaan | Detail | Bukti |
 | --- | --- | --- |
 | Provision host | VM Ubuntu 24.04 arm64 di Oracle Always Free, 2 OCPU / 12 GB / 50 GB; image aplikasi tetap Debian 13 di dalam container; IPv4 (IPv6 opsional) | `uname -a`, spesifikasi |
-| Image deployment | `deploy/staging`: `python:3.15-slim-trixie` + FFmpeg + lock ber-hash, web di belakang Caddy, gate publik tertutup | `docker build`, 124 tes di dalam image, `/healthz` |
+| Image deployment | `deploy/staging`: `python:3.15-slim-trixie` + FFmpeg + lock ber-hash, web di belakang Caddy, gate publik tertutup | `docker build`, 129 tes di dalam image, `/healthz`, smoke nyata amd64 (workflow `real-smoke`) |
 | DNS & domain | A + AAAA ke host staging, TTL rendah, tanpa wildcard | `dig` A/AAAA |
 | TLS | Jalur VPS: Let's Encrypt via ACME untuk domain staging. Jalur VM lokal: sertifikat self-signed **hanya** untuk menguji konfigurasi — bukan bukti TLS produksi | `openssl s_client`, masa berlaku, dan catatan jalur mana yang dipakai |
 | Hardening dasar | SSH key-only, non-root, firewall host hanya 80/443 + SSH terbatas, unattended-upgrades, log rotation | `ss -tulpn`, ruleset |
