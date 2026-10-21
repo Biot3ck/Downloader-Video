@@ -130,7 +130,8 @@ def _public_url(url):
 
 def _duration_of(path):
     try:
-        result = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+        result = subprocess.run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file',
+                                 '-show_entries', 'format=duration',
                                  '-of', 'json', str(path)], capture_output=True, text=True,
                                 timeout=20, check=True)
         return float(json.loads(result.stdout)['format']['duration'])
@@ -141,7 +142,8 @@ def _duration_of(path):
 def _to_mp4(source, output):
     """Make the file playable in browsers: H.264 + AAC in a faststart MP4."""
     try:
-        probe = subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
+        probe = subprocess.run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file',
+                                '-show_entries',
                                 'stream=codec_type,codec_name,pix_fmt', '-of', 'json',
                                 str(source)], capture_output=True, text=True, timeout=20,
                                check=True)
@@ -157,7 +159,8 @@ def _to_mp4(source, output):
             and (audio is None or audio.get('codec_name') == 'aac')):
         shutil.copy2(source, output)
         return
-    command = ['ffmpeg', '-y', '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
+    command = ['ffmpeg', '-nostdin', '-y', '-protocol_whitelist', 'file',
+               '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
                '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
                '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', str(output)]
     try:
@@ -168,7 +171,8 @@ def _to_mp4(source, output):
 
 def _to_mp3(source, output):
     try:
-        subprocess.run(['ffmpeg', '-y', '-i', str(source), '-vn', '-c:a', 'libmp3lame',
+        subprocess.run(['ffmpeg', '-nostdin', '-y', '-protocol_whitelist', 'file',
+                        '-i', str(source), '-vn', '-c:a', 'libmp3lame',
                         '-b:a', '192k', str(output)], capture_output=True, text=True,
                        timeout=300, check=True)
     except (subprocess.SubprocessError, OSError):

@@ -100,9 +100,11 @@ Compose menjalankan web di belakang Caddy dengan TLS, `read_only`, `cap_drop: AL
 (`compose.real-test.yaml`) lewat SSH tunnel; instance publik tetap tanpa route nyata. Panduan:
 `deploy/staging/README.md` dan `deploy/oracle/README.md`.
 
-Review paket OS 17 Oktober menargetkan image lama (`clipora-web:v8-staging`, mewarisi worker).
-Image baru memakai base dan daftar paket yang berbeda, jadi review itu **harus diulang** pada
-image `clipora-web:staging` sebelum sign-off keamanan.
+Review paket OS diulang 21 Oktober 2026 terhadap image `clipora-web:staging` (bukan image lama).
+Delapan temuan `upgrade_required` hilang — expat 2.9.0, jpeg-xl u3, dan xz-utils u2 sudah
+terpasang. Sisa 156 open + 8 undetermined adalah advisory yang belum diperbaiki di trixie dan
+masih butuh triage reachability; belum ada sign-off keamanan. Rincian di
+[docs/OS_PACKAGE_REVIEW.md](docs/OS_PACKAGE_REVIEW.md).
 
 ## Fase 0.5 — hasil jalur sah (GitHub Actions, 18 Oktober 2026)
 
@@ -212,19 +214,29 @@ Catatan: post gambar yang ditempel di halaman Video sekarang ditolak dengan pesa
 "This post contains photos only. Use the Photo Downloader.", dan opsi unduhan disembunyikan.
 Durasi yang tidak dilaporkan platform (mis. Instagram) diisi dari `loadedmetadata` pemutar.
 
-## Patch OS tertunda
+## Review paket OS image deployment (21 Oktober 2026)
 
-Belum diterapkan; menunggu kandidat terpisah.
+Target: `clipora-web:staging`, ID `sha256:ae33b3545738fb422eadf376f7317252c089705d101eb51c74aeefeab3ced286`,
+Debian 13/trixie aarch64, Python 3.15.0. Snapshot tracker 84.480.930 byte, SHA256
+`c854eb210775bcc75ce78f8ac04a45715ed94d0dc81f7d430113e1d2b4a8d28e`.
 
-| Source | Terpasang | Target minimum |
-| --- | --- | --- |
-| expat | 2.8.3-1~deb13u1 | 2.9.0-1~deb13u1 |
-| jpeg-xl | 0.11.2-0.1~deb13u2 | 0.11.2-0.1~deb13u3 |
-| xz-utils | 5.8.1-1+deb13u1 | 5.8.1-1+deb13u2 |
+| Kategori | Image baru | Image lama 17 Okt |
+| --- | ---: | ---: |
+| Fixed pada versi terpasang | 2.613 | 2.605 |
+| Upgrade required | **0** | 8 |
+| Open review required | 156 | 156 |
+| Undetermined | 8 | 8 |
+| Debian unimportant | 320 | 320 |
+| Marker not affected | 325 | 325 |
 
-Python juga membawa salinan `expat` sendiri (2.8.5) yang perlu ditinjau terpisah. Selain itu ada
-156 record "open review required" dan 4 "undetermined" yang belum dinilai. Rincian:
-[docs/OS_PACKAGE_REVIEW.md](docs/OS_PACKAGE_REVIEW.md).
+Tiga patch yang tertunda sudah terpenuhi di image baru: expat `2.9.0-1~deb13u1`, jpeg-xl
+`0.11.2-0.1~deb13u3`, xz-utils `5.8.1-1+deb13u2`. Sisa open/undetermined belum diperbaiki di
+trixie; yang paling relevan adalah `ffmpeg`/`libav*` (37 record) karena memproses media pengguna.
+
+Mitigasi: `ffmpeg`/`ffprobe` sekarang dijalankan dengan `-protocol_whitelist file` dan `-nostdin`,
+jadi file yang diunduh tidak bisa memicu bukaan URL jaringan atau stdin. Uji konversi WebM → MP4
+dan MP3 tetap lulus. Review ini belum menjadi persetujuan: kernel/host, library bundled Python,
+dan dependency Python tidak tercakup.
 
 ## Jalan berikutnya
 

@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -345,6 +346,37 @@ class ExtractorTests(unittest.TestCase):
             path, mime, name = store.download(TIKTOK_PHOTO, 'images', 'image', 'tiktok')
         self.assertEqual((mime, name), ('image/jpeg', 'clipora-tiktok.jpg'))
         self.assertEqual(path.read_bytes(), b'\xff\xd8one')
+
+
+class ConversionIsolationTests(unittest.TestCase):
+    """Conversion must never follow URLs embedded in a downloaded file."""
+
+    def test_ffmpeg_and_ffprobe_only_read_local_files(self):
+        calls = []
+
+        def fake_run(command, **kwargs):
+            calls.append(command)
+            stdout = ('{"streams":[{"codec_type":"video","codec_name":"vp9",'
+                      '"pix_fmt":"yuv420p"}]}') if command[0] == 'ffprobe' else ''
+            return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr='')
+
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'input.webm'
+            source.write_bytes(b'x')
+            output = Path(root) / 'output.mp4'
+            with patch('clipora_v8_web.real_media.subprocess.run', side_effect=fake_run):
+                real_media._to_mp4(source, output)
+                real_media._to_mp3(source, output)
+
+        ffprobe = [c for c in calls if c[0] == 'ffprobe']
+        ffmpeg = [c for c in calls if c[0] == 'ffmpeg']
+        self.assertTrue(ffprobe)
+        self.assertTrue(ffmpeg)
+        for command in ffprobe + ffmpeg:
+            index = command.index('-protocol_whitelist')
+            self.assertEqual(command[index + 1], 'file')
+        for command in ffmpeg:
+            self.assertIn('-nostdin', command)
 
 
 if __name__ == '__main__':

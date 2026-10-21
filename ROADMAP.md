@@ -65,8 +65,8 @@ produk** dan mana yang masih **kandidat offline**.
 | Egress stage (DNS/IP policy, parser) | Kandidat, teruji | Tidak | Allowlist CDN platform belum ada |
 | Three-tier kernel/mTLS | Fixture, teruji | Tidak | Belum di host nyata |
 | Preflight host Linux | Teruji | Tidak | **BLOCKED** di macOS — belum ada host |
-| Image web | Mewarisi FFmpeg/yt-dlp | Ya | Harus dipisah ke runtime minimal |
-| Patch OS (expat, jpeg-xl, xz) | Tertunda | — | Wajib sebelum publik |
+| Image web | Deployment bersih (`deploy/staging`) | Ya | Uji di host nyata |
+| Patch OS (expat, jpeg-xl, xz) | Selesai di image 21 Okt | — | 0 `upgrade_required`; triage 156 open + 8 undetermined tetap wajib |
 
 Angka tes per paket tidak diulang di sini; sumber tunggalnya
 [STATUS.md](backend/clipora_v8_web/STATUS.md).
@@ -334,10 +334,13 @@ tidak terlihat oleh pengguna.
 
 Tambahan yang harus ikut di fase ini:
 
-- **Pisahkan image web dari image worker.** Sekarang web membawa FFmpeg/yt-dlp/codec. Runtime web
-  minimal mengurangi permukaan serangan dan ukuran image.
-- **Terapkan patch OS tertunda:** expat, jpeg-xl, xz, plus triage 156 record "open review required"
-  dan 4 "undetermined" di [docs/OS_PACKAGE_REVIEW.md](backend/clipora_v8_web/docs/OS_PACKAGE_REVIEW.md).
+- **Pisahkan image web dari image worker.** `deploy/staging` sudah tidak mewarisi image worker dan
+  hanya memasang dependency produk. FFmpeg/yt-dlp tetap ada karena dibutuhkan unduhan nyata; image
+  pengenalan-link tanpa FFmpeg bisa dipertimbangkan bila gate publik dibuka bertahap.
+- **Triage sisa temuan OS:** tiga patch tertunda (expat, jpeg-xl, xz) sudah terpenuhi di image
+  `clipora-web:staging`; sekarang 0 `upgrade_required`. Tersisa 156 "open review required" dan
+  8 "undetermined" yang harus dinilai jalur capainya, plus salinan expat milik Python.
+  Lihat [docs/OS_PACKAGE_REVIEW.md](backend/clipora_v8_web/docs/OS_PACKAGE_REVIEW.md).
 - **Pin & inventaris dependency**, termasuk salinan expat milik Python.
 - **Kill switch runtime.** Saat ini gate publik adalah konstanta hardcoded di `main.py`
   (`public_downloads_enabled: False` pada tiga tempat, plus `503` di `/api/v8/download`). Ganti

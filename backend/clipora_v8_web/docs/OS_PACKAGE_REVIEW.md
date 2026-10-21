@@ -2,8 +2,11 @@
 >
 > **Pembaruan 18 Oktober 2026:** keputusan berubah. Host staging Oracle Cloud Always Free dipilih
 > dan image deployment baru ada di `deploy/staging` (base `python:3.15-slim-trixie`, FFmpeg dari
-> Debian, lock Python ber-hash). Temuan di bawah menargetkan image lama `clipora-web:v8-staging`;
-> audit paket OS harus diulang pada image baru sebelum sign-off.
+> Debian, lock Python ber-hash). Temuan di bawah menargetkan image lama `clipora-web:v8-staging`.
+>
+> **Pembaruan 21 Oktober 2026:** audit diulang terhadap image baru `clipora-web:staging`. Tiga
+> patch tertunda sudah terpenuhi dan tidak ada lagi `upgrade_required`; hasil lengkap ada di
+> bagian akhir dokumen.
 
 # Review paket OS dan persiapan Linux staging — 17 Oktober 2026
 
@@ -72,3 +75,42 @@ Regresi tahap ini: 83 tes Python web (termasuk enam tes audit OS), delapan tes p
 6. Review hasil final dan rollback sebelum persetujuan keamanan/aktivasi terpisah. Sampai itu selesai, public gate tetap false/503. Docker Desktop tidak dinyatakan menggantikan host staging Linux terpisah.
 
 Tahap ini menyelesaikan inventaris dan review pencocokan paket serta menyiapkan alat/rencana patch, **belum menerapkan patch atau menyelesaikan seluruh triage kerentanan**.
+
+## Review ulang 21 Oktober 2026 — image `clipora-web:staging`
+
+Image deployment baru diperiksa dengan alat yang sama. Target: `clipora-web:staging`, ID
+`sha256:ae33b3545738fb422eadf376f7317252c089705d101eb51c74aeefeab3ced286`, Debian 13/trixie
+aarch64, Python 3.15.0. Snapshot tracker diambil 21 Oktober 2026, 84.480.930 byte, SHA256
+`c854eb210775bcc75ce78f8ac04a45715ed94d0dc81f7d430113e1d2b4a8d28e`.
+
+| Kategori | Image baru | Image lama 17 Okt |
+| --- | ---: | ---: |
+| Fixed pada versi terpasang | 2.613 | 2.605 |
+| Marker not affected | 325 | 325 |
+| Debian unimportant | 320 | 320 |
+| Upgrade required | **0** | 8 |
+| Open review required | 156 | 156 |
+| Undetermined | 8 | 8 |
+| Binary terpasang | 290 | 289 |
+| Source/version | 208 | 207 |
+
+Delapan `upgrade_required` pada image lama sudah hilang: expat `2.8.3-1~deb13u1` →
+`2.9.0-1~deb13u1` (enam CVE), jpeg-xl `0.11.2-0.1~deb13u2` → `u3` (satu CVE), dan xz-utils
+`5.8.1-1+deb13u1` → `u2` (satu record sementara). Image baru mengambil versi trixie yang sudah
+dipatch saat build.
+
+Sisa 156 open dan 8 undetermined adalah advisory yang belum diperbaiki di trixie atau belum
+punya status final; menaikkan versi tidak menutupnya. Sebaran terbesar: ffmpeg 37, mbedtls 17,
+glibc 14, libxml2 11, libxi 7, cjson 6, util-linux 5, libsndfile 4, libx11 4, openjpeg2 4.
+Sebagian besar masuk lewat dependency FFmpeg (X11, cairo, gdk-pixbuf, mesa, tiff, openjpeg) yang
+tidak dipakai jalur produk; `ffmpeg`/`libav*` adalah permukaan yang benar-benar memproses media
+pengguna.
+
+Mitigasi yang diterapkan bersamaan: `ffmpeg` dan `ffprobe` sekarang dijalankan dengan
+`-protocol_whitelist file` dan `-nostdin`, sehingga file yang diunduh tidak bisa memaksa proses
+membuka URL jaringan (mis. playlist HLS/DASH berbahaya) atau membaca stdin. Konversi tetap
+berjalan: uji nyata WebM 2 detik → H.264/AAC MP4 dan MP3 192 kbps lulus, plus 125 tes web.
+
+Status tetap **belum disetujui**: open/undetermined butuh triage reachability, dan review ini
+tidak mencakup kernel/host, library bundled Python, atau dependency Python. Report mentah
+disimpan lokal dengan mode 0600 dan tidak di-commit.

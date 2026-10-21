@@ -21,7 +21,7 @@ Ini perlindungan konfigurasi penyimpanan lokal; bukan isolasi terhadap administr
 | Tiga tier/mTLS, worker yt-dlp aktual | Kasus valid menghasilkan MP4; wrong hostname dan CA tak dipercaya ditolak; bypass worker/gateway/peer diuji pada lease aktif; IPv6 DROP dan pencabutan lease terbukti pada namespace Docker |
 | Crash/recovery aktual | SIGKILL hanya proses web disposable; helper tetap memegang leader lock; job terputus gagal, file parsial tidak disajikan; resource milik tes dibersihkan |
 | Alur offline sesudah perbaikan | State baru privat → sesi → queue → worker Docker aktual → MP4 → owned file/Range/HEAD; sesi asing ditolak; gate HD/reward klien tetap 503 |
-| Dependensi image | Lookup OSV untuk 17 pasangan nama/versi Python tanpa advisory yang cocok. Review Debian 289 binary/207 source-version menemukan delapan record yang memerlukan upgrade pada Expat, JPEG XL dan XZ, 156 open dan empat undetermined untuk triage; Expat bundled Python juga perlu review. Patch belum diterapkan. Lihat OS_PACKAGE_REVIEW.md |
+| Dependensi image | Lookup OSV untuk 17 pasangan nama/versi Python tanpa advisory yang cocok. Review Debian image baru (21 Okt, 290 binary/208 source-version): 0 `upgrade_required`; tiga patch tertunda (Expat, JPEG XL, XZ) sudah terpenuhi. Tersisa 156 open dan 8 undetermined untuk triage; Expat bundled Python juga perlu review. Lihat OS_PACKAGE_REVIEW.md |
 | Preflight host | BLOCKED sebagaimana mestinya pada macOS; query daemon sengaja tidak dijalankan untuk attestation host Linux. Check yang dilewati berarti belum terbukti, bukan penemuan bahwa Docker tidak memiliki fitur tersebut |
 
 Nama report pada outputs chat: clipora-security-current-kernel-valid.json, -kernel-wrong-host.json, -kernel-untrusted-ca.json, -web-default.json, -web-owned.json, -restart.json, -offline-flow.json, -inventory.json, -python-advisories.json dan -preflight.json. Inventory/advisory report menyertakan image ID yang diperiksa. Lookup Python menggunakan API resmi https://google.github.io/osv.dev/post-v1-querybatch/ melalui alat audit host; tidak membuka egress downloader/container atau mengirim URL pengguna/cookie/secret.
@@ -48,5 +48,10 @@ Pembaruan scope: pemilik kembali memilih tanpa VM. Review pencocokan OS dan alat
 **Pembaruan 18 Oktober 2026:** pemilik memilih Oracle Cloud Always Free dan image deployment
 `deploy/staging` sudah tersedia. VM belum dibuat, jadi urutan enam bloker di atas belum dijalankan
 dan tidak ada sign-off baru.
+
+**Pembaruan 21 Oktober 2026:** audit paket OS diulang terhadap `clipora-web:staging`; hasilnya
+0 `upgrade_required` (tiga patch tertunda terpenuhi), 156 open dan 8 undetermined tersisa untuk
+triage reachability. `ffmpeg`/`ffprobe` kini dibatasi `-protocol_whitelist file`. Ini belum
+menutup bloker dependensi dan belum menjadi persetujuan produksi.
 
 Sediakan Linux staging terpisah melalui pilihan pemilik, tanpa menyentuh VPS produksi. Jalankan urutan ../clipora_v8_staging_linux/README.md dan kumpulkan bukti enam blocker di atas pada kandidat deployment yang sama. Setelah hasil dan konfigurasi final dapat ditinjau, lakukan sign-off keamanan; persetujuan aktivasi egress/deployment tetap langkah tersendiri. Tidak ada fungsi aktivasi atau sign-off otomatis pada perubahan ini.
